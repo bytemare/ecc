@@ -35,6 +35,11 @@ func assert(scalar internal.Scalar) *Scalar {
 	return sc
 }
 
+// Group returns the group's Identifier.
+func (s *Scalar) Group() byte {
+	return Identifier
+}
+
 // Zero sets the scalar to 0, and returns it.
 func (s *Scalar) Zero() internal.Scalar {
 	s.scalar.Zero()

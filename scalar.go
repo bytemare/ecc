@@ -26,6 +26,11 @@ func newScalar(s internal.Scalar) *Scalar {
 	return &Scalar{Scalar: s}
 }
 
+// Group returns the group's Identifier.
+func (s *Scalar) Group() Group {
+	return Group(s.Scalar.Group())
+}
+
 // Zero sets the scalar to 0, and returns it.
 func (s *Scalar) Zero() *Scalar {
 	s.Scalar.Zero()

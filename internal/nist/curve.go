@@ -71,7 +71,7 @@ var (
 func (c *curve[point]) affineToPoint(pxc, pyc *big.Int) point {
 	var decompressed []byte
 
-	byteLen := (c.field.BitLen() + 7) / 8
+	byteLen := c.field.ByteLen()
 	switch byteLen {
 	case 32:
 		decompressed = decompressed256[:]

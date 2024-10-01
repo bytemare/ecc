@@ -26,6 +26,11 @@ func newPoint(p internal.Element) *Element {
 	return &Element{Element: p}
 }
 
+// Group returns the group's Identifier.
+func (e *Element) Group() Group {
+	return Group(e.Element.Group())
+}
+
 // Base sets the element to the group's base point a.k.a. canonical generator.
 func (e *Element) Base() *Element {
 	return &Element{Element: e.Element.Base()}

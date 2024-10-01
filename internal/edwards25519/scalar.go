@@ -19,9 +19,7 @@ import (
 	"github.com/bytemare/crypto/internal"
 )
 
-const (
-	inputLength = 64
-)
+const inputLength = 64
 
 var (
 	scZero Scalar
@@ -67,6 +65,11 @@ func assert(scalar internal.Scalar) *Scalar {
 
 func (s *Scalar) set(scalar *ed.Scalar) {
 	s.scalar = *scalar
+}
+
+// Group returns the group's Identifier.
+func (s *Scalar) Group() byte {
+	return Identifier
 }
 
 // Zero sets the scalar to 0, and returns it.

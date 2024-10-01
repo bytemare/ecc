@@ -54,7 +54,16 @@ func testElementCopySet(t *testing.T, element, other *crypto.Element) {
 	}
 }
 
-func TestElementCopy(t *testing.T) {
+func TestElement_Group(t *testing.T) {
+	testAllGroups(t, func(group *testGroup) {
+		e := group.group.NewElement()
+		if e.Group() != group.group {
+			t.Fatal(errWrongGroup)
+		}
+	})
+}
+
+func TestElement_Copy(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		base := group.group.Base()
 		cpy := base.Copy()
@@ -62,7 +71,7 @@ func TestElementCopy(t *testing.T) {
 	})
 }
 
-func TestElementSet(t *testing.T) {
+func TestElement_Set(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		base := group.group.Base()
 		other := group.group.NewElement()

@@ -11,6 +11,9 @@ package internal
 
 // Element interface abstracts common operations on an Element in a prime-order Group.
 type Element interface {
+	// Group returns the group's Identifier.
+	Group() byte
+
 	// Base sets the element to the group's base point a.k.a. canonical generator.
 	Base() Element
 

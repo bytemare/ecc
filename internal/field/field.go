@@ -15,11 +15,6 @@ import (
 	"math/big"
 )
 
-var (
-	zero = big.NewInt(0)
-	one  = big.NewInt(1)
-)
-
 // String2Int returns a big.Int representation of the integer s.
 func String2Int(s string) big.Int {
 	if p, _ := new(big.Int).SetString(s, 0); p != nil {
@@ -35,6 +30,7 @@ type Field struct {
 	pMinus1div2 *big.Int // used in IsSquare
 	pMinus2     *big.Int // used for Field big.Int inversion
 	exp         *big.Int
+	byteLen     int
 }
 
 // NewField returns a newly instantiated field for the given prime order.
@@ -58,17 +54,8 @@ func NewField(prime *big.Int) Field {
 		pMinus1div2: pMinus1div2,
 		pMinus2:     pMinus2,
 		exp:         exp,
+		byteLen:     (prime.BitLen() + 7) / 8,
 	}
-}
-
-// Zero returns the zero big.Int of the finite Field.
-func (f Field) Zero() *big.Int {
-	return zero
-}
-
-// One returns one big.Int of the finite Field.
-func (f Field) One() *big.Int {
-	return one
 }
 
 // Random sets res to a random big.Int in the Field.
@@ -89,14 +76,9 @@ func (f Field) Order() *big.Int {
 	return f.order
 }
 
-// BitLen of the order.
-func (f Field) BitLen() int {
-	return f.order.BitLen()
-}
-
-// AreEqual returns whether both elements are equal.
-func (f Field) AreEqual(f1, f2 *big.Int) bool {
-	return f.IsZero(f.Sub(&big.Int{}, f1, f2))
+// ByteLen returns the length of the field order in bytes.
+func (f Field) ByteLen() int {
+	return f.byteLen
 }
 
 // IsZero returns whether the big.Int is equivalent to zero.

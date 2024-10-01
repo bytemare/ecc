@@ -47,7 +47,7 @@ const (
 	// Edwards25519Sha512 identifies the Edwards25519 group with SHA2-512 hash-to-group hashing.
 	Edwards25519Sha512
 
-	// Secp256k1 identifies the Secp256k1 group with SHA2-256 hash-to-group hashing.
+	// Secp256k1 identifies the SECp256k1 group with SHA2-256 hash-to-group hashing.
 	Secp256k1
 
 	maxID

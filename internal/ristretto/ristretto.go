@@ -19,6 +19,9 @@ import (
 )
 
 const (
+	// Identifier distinguishes this group from the others by a byte representation.
+	Identifier = byte(1)
+
 	inputLength = 64
 
 	// H2C represents the hash-to-curve string identifier.

@@ -30,7 +30,6 @@ func newScalar(f *field.Field) *Scalar {
 		field:  f,
 		scalar: big.Int{},
 	}
-	s.scalar.Set(s.field.Zero())
 
 	return s
 }
@@ -48,15 +47,29 @@ func (s *Scalar) assert(scalar internal.Scalar) *Scalar {
 	return _sc
 }
 
+// Group returns the group's Identifier.
+func (s *Scalar) Group() byte {
+	switch *s.field {
+	case p256.scalarField:
+		return IdentifierP256
+	case p384.scalarField:
+		return IdentifierP384
+	case p521.scalarField:
+		return IdentifierP521
+	}
+
+	panic(fmt.Sprintf("invalid field order for scalar %s", s.field.Order().String()))
+}
+
 // Zero sets s to 0, and returns it.
 func (s *Scalar) Zero() internal.Scalar {
-	s.scalar.Set(s.field.Zero())
+	s.scalar.Set(big.NewInt(0))
 	return s
 }
 
 // One sets s to 1, and returns it.
 func (s *Scalar) One() internal.Scalar {
-	s.scalar.Set(s.field.One())
+	s.scalar.Set(big.NewInt(1))
 	return s
 }
 
@@ -168,7 +181,7 @@ func (s *Scalar) LessOrEqual(scalar internal.Scalar) int {
 
 // IsZero returns whether the scalar is 0.
 func (s *Scalar) IsZero() bool {
-	return s.field.AreEqual(&s.scalar, s.field.Zero())
+	return s.field.IsZero(&s.scalar)
 }
 
 // Set sets the receiver to the value of the argument scalar, and returns the receiver.
@@ -194,7 +207,7 @@ func (s *Scalar) SetUInt64(i uint64) internal.Scalar {
 func (s *Scalar) UInt64() (uint64, error) {
 	b := s.Encode()
 	overflows := byte(0)
-	scalarLength := (s.field.BitLen() + 7) / 8
+	scalarLength := s.field.ByteLen()
 
 	for _, bx := range b[:scalarLength-8] {
 		overflows |= bx
@@ -217,20 +230,16 @@ func (s *Scalar) Copy() internal.Scalar {
 
 // Encode returns the compressed byte encoding of the scalar.
 func (s *Scalar) Encode() []byte {
-	byteLen := (s.field.BitLen() + 7) / 8
-	scalar := make([]byte, byteLen)
-
+	scalar := make([]byte, s.field.ByteLen())
 	return s.scalar.FillBytes(scalar)
 }
 
 // Decode sets the receiver to a decoding of the input data, and returns an error on failure.
 func (s *Scalar) Decode(in []byte) error {
-	expectedLength := (s.field.BitLen() + 7) / 8
-
 	switch len(in) {
 	case 0:
 		return internal.ErrParamNilScalar
-	case expectedLength:
+	case s.field.ByteLen():
 		break
 	default:
 		return internal.ErrParamScalarLength

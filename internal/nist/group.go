@@ -6,7 +6,8 @@
 // LICENSE file in the root directory of this source tree or at
 // https://spdx.org/licenses/MIT.html
 
-// Package nist allows simple and abstracted operations in  the NIST P-256, P-384, and P-521 groups.
+// Package nist allows simple and abstracted operations in the NIST P-256, P-384, and
+// P-521 groups, wrapping filippo.io/nistec.
 package nist
 
 import (
@@ -39,6 +40,15 @@ const (
 
 	// E2CP521 represents the encode-to-curve string identifier for P521.
 	E2CP521 = "P521_XMD:SHA-512_SSWU_NU_"
+
+	// IdentifierP256 distinguishes this group from the others by a byte representation.
+	IdentifierP256 = byte(3)
+
+	// IdentifierP384 distinguishes this group from the others by a byte representation.
+	IdentifierP384 = byte(4)
+
+	// IdentifierP521 distinguishes this group from the others by a byte representation.
+	IdentifierP521 = byte(5)
 )
 
 // P256 returns the single instantiation of the P256 Group.
@@ -140,14 +150,12 @@ func (g Group[P]) Ciphersuite() string {
 
 // ScalarLength returns the byte size of an encoded element.
 func (g Group[P]) ScalarLength() int {
-	byteLen := (g.scalarField.BitLen() + 7) / 8
-	return byteLen
+	return g.scalarField.ByteLen()
 }
 
 // ElementLength returns the byte size of an encoded element.
 func (g Group[P]) ElementLength() int {
-	byteLen := (g.curve.field.BitLen() + 7) / 8
-	return 1 + byteLen
+	return 1 + g.scalarField.ByteLen()
 }
 
 // Order returns the order of the canonical group of scalars.
