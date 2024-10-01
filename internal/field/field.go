@@ -91,11 +91,6 @@ func (f Field) Order() *big.Int {
 	return f.order
 }
 
-// BitLen returns the length of the field order in bits.
-func (f Field) BitLen() int {
-	return (f.byteLen * 8) - 7
-}
-
 // ByteLen returns the length of the field order in bytes.
 func (f Field) ByteLen() int {
 	return f.byteLen
