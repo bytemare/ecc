@@ -35,6 +35,7 @@ type Field struct {
 	pMinus1div2 *big.Int // used in IsSquare
 	pMinus2     *big.Int // used for Field big.Int inversion
 	exp         *big.Int
+	byteLen     int
 }
 
 // NewField returns a newly instantiated field for the given prime order.
@@ -58,6 +59,7 @@ func NewField(prime *big.Int) Field {
 		pMinus1div2: pMinus1div2,
 		pMinus2:     pMinus2,
 		exp:         exp,
+		byteLen:     (prime.BitLen() + 7) / 8,
 	}
 }
 
@@ -89,9 +91,14 @@ func (f Field) Order() *big.Int {
 	return f.order
 }
 
-// BitLen of the order.
+// BitLen returns the length of the field order in bits.
 func (f Field) BitLen() int {
-	return f.order.BitLen()
+	return (f.byteLen * 8) - 7
+}
+
+// ByteLen returns the length of the field order in bytes.
+func (f Field) ByteLen() int {
+	return f.byteLen
 }
 
 // AreEqual returns whether both elements are equal.

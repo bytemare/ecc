@@ -35,6 +35,11 @@ func checkElement(element internal.Element) *Element {
 	return ec
 }
 
+// Group returns the group's Identifier.
+func (e *Element) Group() byte {
+	return Identifier
+}
+
 // Base sets the element to the group's base point a.k.a. canonical generator.
 func (e *Element) Base() internal.Element {
 	e.element.Set(ed.NewGeneratorPoint())

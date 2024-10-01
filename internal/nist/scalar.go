@@ -48,6 +48,20 @@ func (s *Scalar) assert(scalar internal.Scalar) *Scalar {
 	return _sc
 }
 
+// Group returns the group's Identifier.
+func (s *Scalar) Group() byte {
+	switch s.field.ByteLen() {
+	case 32:
+		return IdentifierP256
+	case 48:
+		return IdentifierP384
+	case 66:
+		return IdentifierP521
+	}
+
+	panic("invalid group type, expected nistec.P256Point/P384Point/P521Point")
+}
+
 // Zero sets s to 0, and returns it.
 func (s *Scalar) Zero() internal.Scalar {
 	s.scalar.Set(s.field.Zero())
@@ -194,7 +208,7 @@ func (s *Scalar) SetUInt64(i uint64) internal.Scalar {
 func (s *Scalar) UInt64() (uint64, error) {
 	b := s.Encode()
 	overflows := byte(0)
-	scalarLength := (s.field.BitLen() + 7) / 8
+	scalarLength := s.field.ByteLen()
 
 	for _, bx := range b[:scalarLength-8] {
 		overflows |= bx
@@ -217,20 +231,16 @@ func (s *Scalar) Copy() internal.Scalar {
 
 // Encode returns the compressed byte encoding of the scalar.
 func (s *Scalar) Encode() []byte {
-	byteLen := (s.field.BitLen() + 7) / 8
-	scalar := make([]byte, byteLen)
-
+	scalar := make([]byte, s.field.ByteLen())
 	return s.scalar.FillBytes(scalar)
 }
 
 // Decode sets the receiver to a decoding of the input data, and returns an error on failure.
 func (s *Scalar) Decode(in []byte) error {
-	expectedLength := (s.field.BitLen() + 7) / 8
-
 	switch len(in) {
 	case 0:
 		return internal.ErrParamNilScalar
-	case expectedLength:
+	case s.field.ByteLen():
 		break
 	default:
 		return internal.ErrParamScalarLength

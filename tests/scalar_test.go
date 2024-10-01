@@ -22,6 +22,15 @@ import (
 	"github.com/bytemare/crypto/internal"
 )
 
+func TestScalar_Group(t *testing.T) {
+	testAllGroups(t, func(group *testGroup) {
+		s := group.group.NewScalar()
+		if s.Group() != group.group {
+			t.Fatal(errWrongGroup)
+		}
+	})
+}
+
 func TestScalar_WrongInput(t *testing.T) {
 	exec := func(f func(*crypto.Scalar) *crypto.Scalar, arg *crypto.Scalar) func() {
 		return func() {
@@ -99,7 +108,7 @@ func testScalarCopySet(t *testing.T, scalar, other *crypto.Scalar) {
 	}
 }
 
-func TestScalarCopy(t *testing.T) {
+func TestScalar_Copy(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		random := group.group.NewScalar().Random()
 		cpy := random.Copy()
@@ -107,7 +116,7 @@ func TestScalarCopy(t *testing.T) {
 	})
 }
 
-func TestScalarSet(t *testing.T) {
+func TestScalar_Set(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		random := group.group.NewScalar().Random()
 		other := group.group.NewScalar()

@@ -18,6 +18,9 @@ import (
 )
 
 const (
+	// Identifier distinguishes this group from the others by a byte representation.
+	Identifier = byte(6)
+
 	canonicalEncodingLength = 32
 	orderPrime              = "7237005577332262213973186563042994240857116359379907606001950938285454250989"
 )

@@ -60,6 +60,11 @@ func (s *Scalar) set(scalar *ristretto255.Scalar) {
 	s.scalar = *ristretto255.NewScalar().Add(&scZero.scalar, scalar)
 }
 
+// Group returns the group's Identifier.
+func (s *Scalar) Group() byte {
+	return Identifier
+}
+
 // Zero sets the scalar to 0, and returns it.
 func (s *Scalar) Zero() internal.Scalar {
 	s.scalar.Zero()

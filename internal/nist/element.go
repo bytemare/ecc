@@ -12,6 +12,9 @@ import (
 	"crypto/subtle"
 	"encoding/hex"
 	"fmt"
+	"reflect"
+
+	"filippo.io/nistec"
 
 	"github.com/bytemare/crypto/internal"
 )
@@ -39,6 +42,25 @@ func checkElement[Point nistECPoint[Point]](element internal.Element) *Element[P
 	}
 
 	return ec
+}
+
+// Group returns the group's Identifier.
+func (e *Element[Point]) Group() byte {
+	switch any(e.p).(type) {
+	case *nistec.P256Point:
+		return IdentifierP256
+	case *nistec.P384Point:
+		return IdentifierP384
+	case *nistec.P521Point:
+		return IdentifierP521
+	}
+
+	panic(
+		fmt.Sprintf(
+			"invalid group type, expected *nistec.P256Point/P384Point/P521Point, got %v",
+			reflect.TypeFor[Point](),
+		),
+	)
 }
 
 // Base sets the element to the group's base point a.k.a. canonical generator.

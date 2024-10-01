@@ -18,6 +18,9 @@ import (
 )
 
 const (
+	// Identifier distinguishes this group from the others by a byte representation.
+	Identifier = byte(7)
+
 	// H2CSECP256K1 represents the hash-to-curve string identifier for Secp256k1.
 	H2CSECP256K1 = "secp256k1_XMD:SHA-256_SSWU_RO_"
 

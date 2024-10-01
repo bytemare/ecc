@@ -11,6 +11,9 @@ package internal
 
 // Scalar interface abstracts common operations on scalars in a prime-order Group.
 type Scalar interface {
+	// Group returns the group's Identifier.
+	Group() byte
+
 	// Zero sets the scalar to 0, and returns it.
 	Zero() Scalar
 
