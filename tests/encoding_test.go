@@ -137,7 +137,7 @@ func testScalarEncodings(g crypto.Group, f makeEncodeTest) error {
 		return err
 	}
 
-	if source.Equal(receiver) != 1 {
+	if !source.Equal(receiver) {
 		return errors.New(errExpectedEquality)
 	}
 
@@ -152,7 +152,7 @@ func testElementEncodings(g crypto.Group, f makeEncodeTest) error {
 		return err
 	}
 
-	if source.Equal(receiver) != 1 {
+	if !source.Equal(receiver) {
 		return errors.New(errExpectedEquality)
 	}
 
@@ -248,7 +248,7 @@ func TestEncoding_Hex_Fails(t *testing.T) {
 			t.Fatalf("unexpected error on valid encoding: %s", err)
 		}
 
-		if s.Equal(scalar) != 1 {
+		if !s.Equal(scalar) {
 			t.Fatal(errExpectedEquality)
 		}
 
@@ -258,7 +258,7 @@ func TestEncoding_Hex_Fails(t *testing.T) {
 			t.Fatalf("unexpected error on valid encoding: %s", err)
 		}
 
-		if e.Equal(element) != 1 {
+		if !e.Equal(element) {
 			t.Fatal(errExpectedEquality)
 		}
 	})

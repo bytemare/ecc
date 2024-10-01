@@ -100,13 +100,13 @@ func (s *Scalar) Invert() *Scalar {
 	return s
 }
 
-// Equal returns 1 if the scalars are equal, and 0 otherwise.
-func (s *Scalar) Equal(scalar *Scalar) int {
+// Equal returns true if the elements are equivalent, and false otherwise.
+func (s *Scalar) Equal(scalar *Scalar) bool {
 	if scalar == nil {
-		return 0
+		return false
 	}
 
-	return s.Scalar.Equal(scalar.Scalar)
+	return s.Scalar.Equal(scalar.Scalar) == 1
 }
 
 // LessOrEqual returns 1 if s <= scalar, and 0 otherwise.
