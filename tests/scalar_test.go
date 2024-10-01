@@ -38,7 +38,7 @@ func TestScalar_WrongInput(t *testing.T) {
 		}
 	}
 
-	equal := func(f func(*crypto.Scalar) int, arg *crypto.Scalar) func() {
+	equal := func(f func(*crypto.Scalar) bool, arg *crypto.Scalar) func() {
 		return func() {
 			f(arg)
 		}
@@ -87,23 +87,23 @@ func testScalarCopySet(t *testing.T, scalar, other *crypto.Scalar) {
 	}
 
 	// Verify whether they are equivalent
-	if scalar.Equal(other) != 1 {
+	if !scalar.Equal(other) {
 		t.Fatalf("Expected equality")
 	}
 
 	// Verify than operations on one don't affect the other
 	scalar.Add(scalar)
-	if scalar.Equal(other) == 1 {
+	if scalar.Equal(other) {
 		t.Fatalf(errUnExpectedEquality)
 	}
 
 	other.Invert()
-	if scalar.Equal(other) == 1 {
+	if scalar.Equal(other) {
 		t.Fatalf(errUnExpectedEquality)
 	}
 
 	// Verify setting to nil sets to 0
-	if scalar.Set(nil).Equal(other.Zero()) != 1 {
+	if !scalar.Set(nil).Equal(other.Zero()) {
 		t.Error(errExpectedEquality)
 	}
 }
@@ -185,7 +185,7 @@ func TestScalar_SetUInt64(t *testing.T) {
 		}
 
 		s.SetUInt64(1)
-		if s.Equal(group.group.NewScalar().One()) != 1 {
+		if !s.Equal(group.group.NewScalar().One()) {
 			t.Fatal("expected 1")
 		}
 
@@ -290,12 +290,12 @@ func scalarTestZero(t *testing.T, g crypto.Group) {
 	}
 
 	s = g.NewScalar().Random()
-	if s.Add(zero).Equal(s) != 1 {
+	if !s.Add(zero).Equal(s) {
 		t.Fatal("expected no change in adding zero scalar")
 	}
 
 	s = g.NewScalar().Random()
-	if s.Add(zero).Equal(s) != 1 {
+	if !s.Add(zero).Equal(s) {
 		t.Fatal("not equal")
 	}
 }
@@ -303,14 +303,14 @@ func scalarTestZero(t *testing.T, g crypto.Group) {
 func scalarTestOne(t *testing.T, g crypto.Group) {
 	one := g.NewScalar().One()
 	m := one.Copy()
-	if one.Equal(m.Multiply(m)) != 1 {
+	if !one.Equal(m.Multiply(m)) {
 		t.Fatal(errExpectedEquality)
 	}
 }
 
 func scalarTestRandom(t *testing.T, g crypto.Group) {
 	r := g.NewScalar().Random()
-	if r.Equal(g.NewScalar().Zero()) == 1 {
+	if r.Equal(g.NewScalar().Zero()) {
 		t.Fatalf("random scalar is zero: %v", r.Hex())
 	}
 }
@@ -319,22 +319,22 @@ func scalarTestEqual(t *testing.T, g crypto.Group) {
 	zero := g.NewScalar().Zero()
 	zero2 := g.NewScalar().Zero()
 
-	if g.NewScalar().Random().Equal(nil) != 0 {
+	if g.NewScalar().Random().Equal(nil) {
 		t.Fatal(errUnExpectedEquality)
 	}
 
-	if zero.Equal(zero2) != 1 {
+	if !zero.Equal(zero2) {
 		t.Fatal(errExpectedEquality)
 	}
 
 	random := g.NewScalar().Random()
 	cpy := random.Copy()
-	if random.Equal(cpy) != 1 {
+	if !random.Equal(cpy) {
 		t.Fatal(errExpectedEquality)
 	}
 
 	random2 := g.NewScalar().Random()
-	if random.Equal(random2) == 1 {
+	if random.Equal(random2) {
 		t.Fatal(errUnExpectedEquality)
 	}
 }
@@ -385,7 +385,7 @@ func scalarTestLessOrEqual(t *testing.T, g crypto.Group) {
 func scalarTestAdd(t *testing.T, g crypto.Group) {
 	r := g.NewScalar().Random()
 	cpy := r.Copy()
-	if r.Add(nil).Equal(cpy) != 1 {
+	if !r.Add(nil).Equal(cpy) {
 		t.Fatal(errExpectedEquality)
 	}
 }
@@ -393,7 +393,7 @@ func scalarTestAdd(t *testing.T, g crypto.Group) {
 func scalarTestSubtract(t *testing.T, g crypto.Group) {
 	r := g.NewScalar().Random()
 	cpy := r.Copy()
-	if r.Subtract(nil).Equal(cpy) != 1 {
+	if !r.Subtract(nil).Equal(cpy) {
 		t.Fatal(errExpectedEquality)
 	}
 }
@@ -408,21 +408,21 @@ func scalarTestMultiply(t *testing.T, g crypto.Group) {
 func scalarTestPow(t *testing.T, g crypto.Group) {
 	// s**nil = 1
 	s := g.NewScalar().Random()
-	if s.Pow(nil).Equal(g.NewScalar().One()) != 1 {
+	if !s.Pow(nil).Equal(g.NewScalar().One()) {
 		t.Fatal("expected s**nil = 1")
 	}
 
 	// s**0 = 1
 	s = g.NewScalar().Random()
 	zero := g.NewScalar().Zero()
-	if s.Pow(zero).Equal(g.NewScalar().One()) != 1 {
+	if !s.Pow(zero).Equal(g.NewScalar().One()) {
 		t.Fatal("expected s**0 = 1")
 	}
 
 	// s**1 = s
 	s = g.NewScalar().Random()
 	exp := g.NewScalar().One()
-	if s.Copy().Pow(exp).Equal(s) != 1 {
+	if !s.Copy().Pow(exp).Equal(s) {
 		t.Fatal("expected s**1 = s")
 	}
 
@@ -432,7 +432,7 @@ func scalarTestPow(t *testing.T, g crypto.Group) {
 	s2 := s.Copy().Multiply(s)
 	exp.SetUInt64(2)
 
-	if s.Pow(exp).Equal(s2) != 1 {
+	if !s.Pow(exp).Equal(s2) {
 		t.Fatal("expected s**2 = s*s")
 	}
 
@@ -442,7 +442,7 @@ func scalarTestPow(t *testing.T, g crypto.Group) {
 	s3.Multiply(s)
 	exp.SetUInt64(3)
 
-	if s.Pow(exp).Equal(s3) != 1 {
+	if !s.Pow(exp).Equal(s3) {
 		t.Fatal("expected s**3 = s*s*s")
 	}
 
@@ -452,7 +452,7 @@ func scalarTestPow(t *testing.T, g crypto.Group) {
 	exp.SetUInt64(7)
 
 	res := s.Pow(exp)
-	if res.Equal(result) != 1 {
+	if !res.Equal(result) {
 		t.Fatal("expected 5**7 = 78125")
 	}
 
@@ -465,7 +465,7 @@ func scalarTestPow(t *testing.T, g crypto.Group) {
 	exp.SetUInt64(255)
 
 	res = s.Pow(exp)
-	if res.Equal(result) != 1 {
+	if !res.Equal(result) {
 		t.Fatal(
 			"expected 3**255 = " +
 				"11F1B08E87EC42C5D83C3218FC83C41DCFD9F4428F4F92AF1AAA80AA46162B1F71E981273601F4AD1DD4709B5ACA650265A6AB",
@@ -481,7 +481,7 @@ func scalarTestPow(t *testing.T, g crypto.Group) {
 	exp.SetUInt64(513)
 
 	res = s.Pow(exp)
-	if res.Equal(result) != 1 {
+	if !res.Equal(result) {
 		t.Fatal("expect equality on 7945232487465**513")
 	}
 
@@ -513,7 +513,7 @@ func scalarTestPow(t *testing.T, g crypto.Group) {
 
 	result = bigIntExp(t, g, iBase, iExp)
 
-	if s.Pow(exp).Equal(result) != 1 {
+	if !s.Pow(exp).Equal(result) {
 		t.Fatal("expected equality on random numbers")
 	}
 }
@@ -546,14 +546,14 @@ func scalarTestInvert(t *testing.T, g crypto.Group) {
 	sqr := s.Copy().Multiply(s)
 
 	i := s.Copy().Invert().Multiply(sqr)
-	if i.Equal(s) != 1 {
+	if !i.Equal(s) {
 		t.Fatal(errExpectedEquality)
 	}
 
 	s = g.NewScalar().Random()
 	square := s.Copy().Multiply(s)
 	inv := square.Copy().Invert()
-	if s.One().Equal(square.Multiply(inv)) != 1 {
+	if !s.One().Equal(square.Multiply(inv)) {
 		t.Fatal(errExpectedEquality)
 	}
 }

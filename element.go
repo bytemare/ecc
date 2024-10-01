@@ -87,13 +87,13 @@ func (e *Element) Multiply(scalar *Scalar) *Element {
 	return e
 }
 
-// Equal returns 1 if the elements are equivalent, and 0 otherwise.
-func (e *Element) Equal(element *Element) int {
+// Equal returns true if the elements are equivalent, and false otherwise.
+func (e *Element) Equal(element *Element) bool {
 	if element == nil {
-		return 0
+		return false
 	}
 
-	return e.Element.Equal(element.Element)
+	return e.Element.Equal(element.Element) == 1
 }
 
 // IsIdentity returns whether the Element is the point at infinity of the Group's underlying curve.

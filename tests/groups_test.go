@@ -154,7 +154,7 @@ func TestHashToScalar(t *testing.T) {
 		sv := decodeScalar(t, group.group, group.hashToCurve.hashToScalar)
 
 		s := group.group.HashToScalar(group.hashToCurve.input, group.hashToCurve.dst)
-		if s.Equal(sv) != 1 {
+		if !s.Equal(sv) {
 			t.Error(errExpectedEquality)
 		}
 	})
@@ -185,7 +185,7 @@ func TestHashToGroup(t *testing.T) {
 		ev := decodeElement(t, group.group, group.hashToCurve.hashToGroup)
 
 		e := group.group.HashToGroup(group.hashToCurve.input, group.hashToCurve.dst)
-		if e.Equal(ev) != 1 {
+		if !e.Equal(ev) {
 			t.Error(errExpectedEquality)
 		}
 	})
