@@ -50,16 +50,16 @@ func (s *Scalar) assert(scalar internal.Scalar) *Scalar {
 
 // Group returns the group's Identifier.
 func (s *Scalar) Group() byte {
-	switch s.field.ByteLen() {
-	case 32:
+	switch *s.field {
+	case p256.scalarField:
 		return IdentifierP256
-	case 48:
+	case p384.scalarField:
 		return IdentifierP384
-	case 66:
+	case p521.scalarField:
 		return IdentifierP521
 	}
 
-	panic("invalid group type, expected nistec.P256Point/P384Point/P521Point")
+	panic(fmt.Sprintf("invalid field order for scalar %s", s.field.Order().String()))
 }
 
 // Zero sets s to 0, and returns it.

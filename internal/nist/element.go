@@ -55,12 +55,7 @@ func (e *Element[Point]) Group() byte {
 		return IdentifierP521
 	}
 
-	panic(
-		fmt.Sprintf(
-			"invalid group type, expected *nistec.P256Point/P384Point/P521Point, got %v",
-			reflect.TypeFor[Point](),
-		),
-	)
+	panic(fmt.Sprintf("invalid point type %v", reflect.TypeFor[Point]()))
 }
 
 // Base sets the element to the group's base point a.k.a. canonical generator.
@@ -89,7 +84,7 @@ func (e *Element[Point]) Double() internal.Element {
 	return e
 }
 
-// negateSmall returns the compressed byte encoding of the negated element e with 5 allocs in 13000 ns/op.
+// negateSmall returns the compressed byte encoding of the negated element e with 5 allocations in 13000 ns/op.
 func (e *Element[Point]) negateSmall() []byte {
 	enc := e.p.BytesCompressed()
 
