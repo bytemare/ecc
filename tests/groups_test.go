@@ -210,3 +210,12 @@ func TestHashToGroup_NoDST(t *testing.T) {
 		}
 	})
 }
+
+func TestGroup_Order(t *testing.T) {
+	testAllGroups(t, func(group *testGroup) {
+		h := hex.EncodeToString(group.group.Order())
+		if h != group.groupOrder {
+			t.Error(errExpectedEquality)
+		}
+	})
+}

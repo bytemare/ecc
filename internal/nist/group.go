@@ -159,8 +159,9 @@ func (g Group[P]) ElementLength() int {
 }
 
 // Order returns the order of the canonical group of scalars.
-func (g Group[P]) Order() string {
-	return g.scalarField.Order().String()
+func (g Group[P]) Order() []byte {
+	out := make([]byte, g.scalarField.ByteLen())
+	return g.scalarField.Order().FillBytes(out)
 }
 
 var (

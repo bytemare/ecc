@@ -47,5 +47,5 @@ type Group interface {
 	ElementLength() int
 
 	// Order returns the order of the canonical group of scalars.
-	Order() string
+	Order() []byte
 }

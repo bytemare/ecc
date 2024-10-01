@@ -27,15 +27,13 @@ const (
 	// E2CSECP256K1 represents the encode-to-curve string identifier for Secp256k1.
 	E2CSECP256K1 = "secp256k1_XMD:SHA-256_SSWU_NU_"
 
-	groupOrder    = "115792089237316195423570985008687907852837564279074904382605163141518161494337"
-	scalarLength  = 32
-	elementLength = 33
+	scalarLength = 32
 )
 
-// Group represents the Secp256k1 group. It exposes a prime-order group API with hash-to-curve operations.
+// Group represents the SECp256k1 group. It exposes a prime-order group API with hash-to-curve operations.
 type Group struct{}
 
-// New returns a new instantiation of the Secp256k1 Group.
+// New returns a new instantiation of the SECp256k1 Group.
 func New() internal.Group {
 	return Group{}
 }
@@ -85,15 +83,15 @@ func (g Group) Ciphersuite() string {
 
 // ScalarLength returns the byte size of an encoded scalar.
 func (g Group) ScalarLength() int {
-	return scalarLength
+	return secp256k1.ScalarLength()
 }
 
 // ElementLength returns the byte size of an encoded element.
 func (g Group) ElementLength() int {
-	return elementLength
+	return secp256k1.ElementLength()
 }
 
 // Order returns the order of the canonical group of scalars.
-func (g Group) Order() string {
-	return groupOrder
+func (g Group) Order() []byte {
+	return secp256k1.Order()
 }

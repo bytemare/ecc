@@ -45,6 +45,7 @@ type testGroup struct {
 	basePointX    string
 	identity      string
 	fieldOrder    string
+	groupOrder    string
 	hashToCurve   testHashToCurve
 	elementLength int
 	scalarLength  int
@@ -78,6 +79,7 @@ var testTable = []*testGroup{
 		basePointX: ristrettoBasePoint,
 		identity:   "0000000000000000000000000000000000000000000000000000000000000000",
 		fieldOrder: "57896044618658097711785492504343953926634992332820282019728792003956564819949",
+		groupOrder: "edd3f55c1a631258d69cf7a2def9de1400000000000000000000000000000010",
 		hashToCurve: testHashToCurve{
 			input:        testHashToGroupInput,
 			dst:          testHashToGroupDST,
@@ -114,6 +116,7 @@ var testTable = []*testGroup{
 		basePointX: "6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296",
 		identity:   "000000000000000000000000000000000000000000000000000000000000000000",
 		fieldOrder: "115792089210356248762697446949407573530086143415290314195533631308867097853951",
+		groupOrder: "ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551",
 		hashToCurve: testHashToCurve{
 			input:        testHashToGroupInput,
 			dst:          testHashToGroupDST,
@@ -150,6 +153,7 @@ var testTable = []*testGroup{
 		basePointX: "aa87ca22be8b05378eb1c71ef320ad746e1d3b628ba79b9859f741e082542a385502f25dbf55296c3a545e3872760ab7",
 		identity:   "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 		fieldOrder: "39402006196394479212279040100143613805079739270465446667948293404245721771496870329047266088258938001861606973112319",
+		groupOrder: "ffffffffffffffffffffffffffffffffffffffffffffffffc7634d81f4372ddf581a0db248b0a77aecec196accc52973",
 		hashToCurve: testHashToCurve{
 			input:        testHashToGroupInput,
 			dst:          testHashToGroupDST,
@@ -186,6 +190,7 @@ var testTable = []*testGroup{
 		basePointX: "00c6858e06b70404e9cd9e3ecb662395b4429c648139053fb521f828af606b4d3dbaa14b5e77efe75928fe1dc127a2ffa8de3348b3c1856a429bf97e7e31c2e5bd66",
 		identity:   "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 		fieldOrder: "6864797660130609714981900799081393217269435300143305409394463459185543183397656052122559640661454554977296311391480858037121987999716643812574028291115057151",
+		groupOrder: "01fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa51868783bf2f966b7fcc0148f709a5d03bb5c9b8899c47aebb6fb71e91386409",
 		hashToCurve: testHashToCurve{
 			input:        testHashToGroupInput,
 			dst:          testHashToGroupDST,
@@ -222,6 +227,7 @@ var testTable = []*testGroup{
 		basePointX: "0900000000000000000000000000000000000000000000000000000000000000",
 		identity:   "0100000000000000000000000000000000000000000000000000000000000000",
 		fieldOrder: "57896044618658097711785492504343953926634992332820282019728792003956564819949",
+		groupOrder: "edd3f55c1a631258d69cf7a2def9de1400000000000000000000000000000010",
 		hashToCurve: testHashToCurve{
 			input:        testHashToGroupInput,
 			dst:          testHashToGroupDST,
@@ -258,6 +264,7 @@ var testTable = []*testGroup{
 		basePointX: "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
 		identity:   "000000000000000000000000000000000000000000000000000000000000000000",
 		fieldOrder: "115792089237316195423570985008687907853269984665640564039457584007908834671663",
+		groupOrder: "fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141",
 		hashToCurve: testHashToCurve{
 			input:        testHashToGroupInput,
 			dst:          testHashToGroupDST,

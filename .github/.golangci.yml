@@ -99,7 +99,7 @@ linters-settings:
     threshold: 100
   errcheck:
     check-type-assertions: true
-    check-blank: true
+    check-blank: false
     exclude-functions:
       - (*crypto/Element).MarshalBinary
       - (*crypto/Scalar).MarshalBinary

@@ -73,6 +73,12 @@ func (s *Scalar) One() internal.Scalar {
 	return s
 }
 
+// MinusOne sets the scalar to order-1, and returns it.
+func (s *Scalar) MinusOne() internal.Scalar {
+	s.scalar.Set(s.field.PMinusOne())
+	return s
+}
+
 // Random sets s to a new random scalar and returns it.
 // The random source is crypto/rand, and this functions is guaranteed to return a non-zero scalar.
 func (s *Scalar) Random() internal.Scalar {
