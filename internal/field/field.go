@@ -15,11 +15,6 @@ import (
 	"math/big"
 )
 
-var (
-	zero = big.NewInt(0)
-	one  = big.NewInt(1)
-)
-
 // String2Int returns a big.Int representation of the integer s.
 func String2Int(s string) big.Int {
 	if p, _ := new(big.Int).SetString(s, 0); p != nil {
@@ -63,16 +58,6 @@ func NewField(prime *big.Int) Field {
 	}
 }
 
-// Zero returns the zero big.Int of the finite Field.
-func (f Field) Zero() *big.Int {
-	return zero
-}
-
-// One returns one big.Int of the finite Field.
-func (f Field) One() *big.Int {
-	return one
-}
-
 // Random sets res to a random big.Int in the Field.
 func (f Field) Random(res *big.Int) *big.Int {
 	tmp, err := rand.Int(rand.Reader, f.order)
@@ -94,11 +79,6 @@ func (f Field) Order() *big.Int {
 // ByteLen returns the length of the field order in bytes.
 func (f Field) ByteLen() int {
 	return f.byteLen
-}
-
-// AreEqual returns whether both elements are equal.
-func (f Field) AreEqual(f1, f2 *big.Int) bool {
-	return f.IsZero(f.Sub(&big.Int{}, f1, f2))
 }
 
 // IsZero returns whether the big.Int is equivalent to zero.

@@ -30,7 +30,6 @@ func newScalar(f *field.Field) *Scalar {
 		field:  f,
 		scalar: big.Int{},
 	}
-	s.scalar.Set(s.field.Zero())
 
 	return s
 }
@@ -64,13 +63,13 @@ func (s *Scalar) Group() byte {
 
 // Zero sets s to 0, and returns it.
 func (s *Scalar) Zero() internal.Scalar {
-	s.scalar.Set(s.field.Zero())
+	s.scalar.Set(big.NewInt(0))
 	return s
 }
 
 // One sets s to 1, and returns it.
 func (s *Scalar) One() internal.Scalar {
-	s.scalar.Set(s.field.One())
+	s.scalar.Set(big.NewInt(1))
 	return s
 }
 
@@ -182,7 +181,7 @@ func (s *Scalar) LessOrEqual(scalar internal.Scalar) int {
 
 // IsZero returns whether the scalar is 0.
 func (s *Scalar) IsZero() bool {
-	return s.field.AreEqual(&s.scalar, s.field.Zero())
+	return s.field.IsZero(&s.scalar)
 }
 
 // Set sets the receiver to the value of the argument scalar, and returns the receiver.
