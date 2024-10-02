@@ -242,12 +242,7 @@ func TestScalar_Decode_OutOfBounds(t *testing.T) {
 		// Decode a scalar higher than order
 		errMessage = "invalid scalar encoding"
 		encoded = make([]byte, group.group.ScalarLength())
-
-		order, ok := new(big.Int).SetString(group.group.Order(), 0)
-		if !ok {
-			t.Errorf("setting int in base %d failed: %v", 0, group.group.Order())
-		}
-
+		order := new(big.Int).SetBytes(group.group.Order())
 		order.Add(order, big.NewInt(1))
 		order.FillBytes(encoded)
 
@@ -267,6 +262,7 @@ func TestScalar_Arithmetic(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		scalarTestZero(t, group.group)
 		scalarTestOne(t, group.group)
+		scalarTestMinusOne(t, group.group)
 		scalarTestEqual(t, group.group)
 		scalarTestLessOrEqual(t, group.group)
 		scalarTestRandom(t, group.group)
@@ -304,6 +300,14 @@ func scalarTestOne(t *testing.T, g crypto.Group) {
 	one := g.NewScalar().One()
 	m := one.Copy()
 	if !one.Equal(m.Multiply(m)) {
+		t.Fatal(errExpectedEquality)
+	}
+}
+
+func scalarTestMinusOne(t *testing.T, g crypto.Group) {
+	m1 := g.NewScalar().MinusOne()
+	one := g.NewScalar().One()
+	if !m1.Add(one).IsZero() {
 		t.Fatal(errExpectedEquality)
 	}
 }
@@ -519,11 +523,13 @@ func scalarTestPow(t *testing.T, g crypto.Group) {
 }
 
 func bigIntExp(t *testing.T, g crypto.Group, base, exp *big.Int) *crypto.Scalar {
-	order, ok := new(big.Int).SetString(g.Order(), 0)
-	if !ok {
-		t.Fatal(ok)
+	orderBytes := g.Order()
+
+	if g == crypto.Ristretto255Sha512 || g == crypto.Edwards25519Sha512 {
+		slices.Reverse(orderBytes)
 	}
 
+	order := new(big.Int).SetBytes(orderBytes)
 	r := new(big.Int).Exp(base, exp, order)
 
 	b := make([]byte, g.ScalarLength())

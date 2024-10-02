@@ -22,9 +22,17 @@ import (
 const inputLength = 64
 
 var (
-	scZero Scalar
-	scOne  Scalar
-	order  big.Int
+	scZero     Scalar
+	scOne      Scalar
+	order      big.Int
+	scMinusOne = []byte{
+		236, 211, 245, 92, 26, 99, 18, 88, 214, 156, 247, 162, 222, 249, 222, 20,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16,
+	}
+	orderBytes = []byte{
+		237, 211, 245, 92, 26, 99, 18, 88, 214, 156, 247, 162, 222, 249, 222, 20,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16,
+	}
 )
 
 func init() {
@@ -81,6 +89,12 @@ func (s *Scalar) Zero() internal.Scalar {
 // One sets the scalar to 1, and returns it.
 func (s *Scalar) One() internal.Scalar {
 	s.set(&scOne.scalar)
+	return s
+}
+
+// MinusOne sets the scalar to order-1, and returns it.
+func (s *Scalar) MinusOne() internal.Scalar {
+	_ = s.decodeScalar(scMinusOne)
 	return s
 }
 
@@ -278,13 +292,10 @@ func (s *Scalar) SetUInt64(i uint64) internal.Scalar {
 	encoded := make([]byte, canonicalEncodingLength)
 	binary.LittleEndian.PutUint64(encoded, i)
 
-	sc, err := decodeScalar(encoded)
-	if err != nil {
+	if err := s.decodeScalar(encoded); err != nil {
 		// This cannot happen, since any uint64 is smaller than the order.
 		panic(fmt.Sprintf("unexpected decoding of uint64 scalar: %s", err))
 	}
-
-	s.set(sc)
 
 	return s
 }
@@ -320,33 +331,25 @@ func (s *Scalar) Encode() []byte {
 	return s.scalar.Bytes()
 }
 
-func decodeScalar(scalar []byte) (*ed.Scalar, error) {
+func (s *Scalar) decodeScalar(scalar []byte) error {
 	if len(scalar) == 0 {
-		return nil, internal.ErrParamNilScalar
+		return internal.ErrParamNilScalar
 	}
 
 	if len(scalar) != canonicalEncodingLength {
-		return nil, internal.ErrParamScalarLength
+		return internal.ErrParamScalarLength
 	}
 
-	s := ed.NewScalar()
-	if _, err := s.SetCanonicalBytes(scalar); err != nil {
-		return nil, fmt.Errorf("%w", err)
+	if _, err := s.scalar.SetCanonicalBytes(scalar); err != nil {
+		return fmt.Errorf("%w", err)
 	}
 
-	return s, nil
+	return nil
 }
 
 // Decode sets the receiver to a decoding of the input data, and returns an error on failure.
 func (s *Scalar) Decode(in []byte) error {
-	sc, err := decodeScalar(in)
-	if err != nil {
-		return err
-	}
-
-	s.scalar = *sc
-
-	return nil
+	return s.decodeScalar(in)
 }
 
 // Hex returns the fixed-sized hexadecimal encoding of s.

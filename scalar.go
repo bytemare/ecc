@@ -43,6 +43,12 @@ func (s *Scalar) One() *Scalar {
 	return s
 }
 
+// MinusOne sets the scalar to order-1, and returns it.
+func (s *Scalar) MinusOne() *Scalar {
+	s.Scalar.MinusOne()
+	return s
+}
+
 // Random sets the current scalar to a new random scalar and returns it.
 // The random source is crypto/rand, and this functions is guaranteed to return a non-zero scalar.
 func (s *Scalar) Random() *Scalar {

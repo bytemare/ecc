@@ -76,6 +76,11 @@ func (f Field) Order() *big.Int {
 	return f.order
 }
 
+// PMinusOne returns p-1, the greatest integer below the order.
+func (f Field) PMinusOne() *big.Int {
+	return new(big.Int).Sub(f.order, big.NewInt(1))
+}
+
 // ByteLen returns the length of the field order in bytes.
 func (f Field) ByteLen() int {
 	return f.byteLen

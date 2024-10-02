@@ -11,6 +11,7 @@ package edwards25519
 
 import (
 	"crypto"
+	"slices"
 
 	ed "filippo.io/edwards25519"
 
@@ -87,6 +88,6 @@ func (g Group) ElementLength() int {
 }
 
 // Order returns the order of the canonical group of scalars.
-func (g Group) Order() string {
-	return orderPrime
+func (g Group) Order() []byte {
+	return slices.Clone(orderBytes)
 }

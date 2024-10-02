@@ -151,7 +151,7 @@ func (g Group) ElementLength() int {
 }
 
 // Order returns the order of the canonical group of scalars.
-func (g Group) Order() string {
+func (g Group) Order() []byte {
 	return g.get().Order()
 }
 

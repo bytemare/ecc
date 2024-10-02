@@ -20,6 +20,9 @@ type Scalar interface {
 	// One sets the scalar to 1, and returns it.
 	One() Scalar
 
+	// MinusOne sets the scalar to order-1, and returns it.
+	MinusOne() Scalar
+
 	// Random sets the current scalar to a new random scalar and returns it.
 	// The random source is crypto/rand, and this functions is guaranteed to return a non-zero scalar.
 	Random() Scalar
