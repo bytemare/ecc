@@ -1,19 +1,18 @@
 // SPDX-License-Identifier: MIT
 //
-// Copyright (C) 2020-2023 Daniel Bourdrez. All Rights Reserved.
+// Copyright (C) 2020-2024 Daniel Bourdrez. All Rights Reserved.
 //
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree or at
 // https://spdx.org/licenses/MIT.html
 
-// Package crypto exposes a prime-order elliptic curve groups with additional hash-to-curve operations.
-package crypto
+package ecc
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/bytemare/crypto/internal"
+	"github.com/bytemare/ecc/internal"
 )
 
 // Element represents an element on the curve of the prime-order group.

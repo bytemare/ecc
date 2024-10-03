@@ -1,19 +1,18 @@
 // SPDX-License-Identifier: MIT
 //
-// Copyright (C) 2020-2023 Daniel Bourdrez. All Rights Reserved.
+// Copyright (C) 2020-2024 Daniel Bourdrez. All Rights Reserved.
 //
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree or at
 // https://spdx.org/licenses/MIT.html
 
-// Package crypto exposes a prime-order elliptic curve groups with additional hash-to-curve operations.
-package crypto
+package ecc
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/bytemare/crypto/internal"
+	"github.com/bytemare/ecc/internal"
 )
 
 // Scalar represents a scalar in the prime-order group.
@@ -116,12 +115,12 @@ func (s *Scalar) Equal(scalar *Scalar) bool {
 }
 
 // LessOrEqual returns 1 if s <= scalar, and 0 otherwise.
-func (s *Scalar) LessOrEqual(scalar *Scalar) int {
+func (s *Scalar) LessOrEqual(scalar *Scalar) bool {
 	if scalar == nil {
-		return 0
+		return false
 	}
 
-	return s.Scalar.LessOrEqual(scalar.Scalar)
+	return s.Scalar.LessOrEqual(scalar.Scalar) == 1
 }
 
 // IsZero returns whether the scalar is 0.
