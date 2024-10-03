@@ -1,4 +1,4 @@
-module github.com/bytemare/crypto
+module github.com/bytemare/ecc
 
 go 1.23.1
 

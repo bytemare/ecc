@@ -1,6 +1,6 @@
 // SPDX-License-Group: MIT
 //
-// Copyright (C) 2020-2023 Daniel Bourdrez. All Rights Reserved.
+// Copyright (C) 2020-2024 Daniel Bourdrez. All Rights Reserved.
 //
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree or at
@@ -22,8 +22,8 @@ import (
 	"filippo.io/edwards25519"
 	"filippo.io/edwards25519/field"
 
-	"github.com/bytemare/crypto"
-	edwards255192 "github.com/bytemare/crypto/internal/edwards25519"
+	"github.com/bytemare/ecc"
+	edwards255192 "github.com/bytemare/ecc/internal/edwards25519"
 )
 
 const hashToCurveVectorsFileLocation = "h2c"
@@ -32,7 +32,7 @@ type h2cVectors struct {
 	Ciphersuite string      `json:"ciphersuite"`
 	Dst         string      `json:"dst"`
 	Vectors     []h2cVector `json:"vectors"`
-	group       crypto.Group
+	group       ecc.Group
 }
 
 type h2cVector struct {
@@ -53,13 +53,13 @@ type h2cVector struct {
 	U   []string `json:"u"`
 }
 
-func ecFromGroup(g crypto.Group) elliptic.Curve {
+func ecFromGroup(g ecc.Group) elliptic.Curve {
 	switch g {
-	case crypto.P256Sha256:
+	case ecc.P256Sha256:
 		return elliptic.P256()
-	case crypto.P384Sha384:
+	case ecc.P384Sha384:
 		return elliptic.P384()
-	case crypto.P521Sha512:
+	case ecc.P521Sha512:
 		return elliptic.P521()
 	default:
 		panic("invalid nist group")
@@ -122,14 +122,14 @@ func (v *h2cVector) run(t *testing.T) {
 	var expected string
 
 	switch v.group {
-	case crypto.P256Sha256, crypto.P384Sha384, crypto.P521Sha512:
+	case ecc.P256Sha256, ecc.P384Sha384, ecc.P521Sha512:
 		e := ecFromGroup(v.group)
 		x, y := vectorToBig(v.P.X, v.P.Y)
 		expected = hex.EncodeToString(elliptic.MarshalCompressed(e, x, y))
-	case crypto.Edwards25519Sha512:
+	case ecc.Edwards25519Sha512:
 		p := vectorToEdwards25519(t, v.P.X, v.P.Y)
 		expected = hex.EncodeToString(p.Bytes())
-	case crypto.Secp256k1:
+	case ecc.Secp256k1Sha256:
 		expected = hex.EncodeToString(vectorToSecp256k1(v.P.X, v.P.Y))
 	}
 
@@ -149,7 +149,7 @@ func (v *h2cVector) run(t *testing.T) {
 	}
 }
 
-func verifyEncoding(p *crypto.Element, function, expected string) error {
+func verifyEncoding(p *ecc.Element, function, expected string) error {
 	if p.Hex() != expected {
 		return fmt.Errorf("Unexpected %s output.\n\tExpected %q\n\tgot %q",
 			function,
@@ -169,7 +169,7 @@ func (v *h2cVectors) runCiphersuite(t *testing.T) {
 }
 
 func TestHashToGroupVectors(t *testing.T) {
-	getGroup := func(ciphersuite string) (crypto.Group, bool) {
+	getGroup := func(ciphersuite string) (ecc.Group, bool) {
 		for _, group := range testTable {
 			if group.h2c == ciphersuite || group.e2c == ciphersuite {
 				return group.group, true

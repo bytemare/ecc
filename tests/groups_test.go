@@ -1,6 +1,6 @@
 // SPDX-License-Group: MIT
 //
-// Copyright (C) 2020-2023 Daniel Bourdrez. All Rights Reserved.
+// Copyright (C) 2020-2024 Daniel Bourdrez. All Rights Reserved.
 //
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree or at
@@ -14,7 +14,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/bytemare/crypto"
+	"github.com/bytemare/ecc"
 )
 
 const consideredAvailableFmt = "%v is considered available when it must not"
@@ -30,12 +30,12 @@ func TestAvailability(t *testing.T) {
 func TestNonAvailability(t *testing.T) {
 	errInvalidID := errors.New("invalid group identifier")
 
-	oob := crypto.Group(0)
+	oob := ecc.Group(0)
 	if oob.Available() {
 		t.Errorf(consideredAvailableFmt, oob)
 	}
 
-	d := crypto.Group(2) // decaf448
+	d := ecc.Group(2) // decaf448
 	if d.Available() {
 		t.Errorf(consideredAvailableFmt, d)
 	}
@@ -45,7 +45,7 @@ func TestNonAvailability(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	oob = crypto.Secp256k1 + 1
+	oob = ecc.Secp256k1Sha256 + 1
 	if oob.Available() {
 		t.Errorf(consideredAvailableFmt, oob)
 	}
@@ -75,13 +75,13 @@ func TestGroup_Base(t *testing.T) {
 func TestDST(t *testing.T) {
 	app := "app"
 	version := uint8(1)
-	tests := map[crypto.Group]string{
-		crypto.Ristretto255Sha512: app + "-V01-CS01-",
-		crypto.P256Sha256:         app + "-V01-CS03-",
-		crypto.P384Sha384:         app + "-V01-CS04-",
-		crypto.P521Sha512:         app + "-V01-CS05-",
-		crypto.Edwards25519Sha512: app + "-V01-CS06-",
-		crypto.Secp256k1:          app + "-V01-CS07-",
+	tests := map[ecc.Group]string{
+		ecc.Ristretto255Sha512: app + "-V01-CS01-",
+		ecc.P256Sha256:         app + "-V01-CS03-",
+		ecc.P384Sha384:         app + "-V01-CS04-",
+		ecc.P521Sha512:         app + "-V01-CS05-",
+		ecc.Edwards25519Sha512: app + "-V01-CS06-",
+		ecc.Secp256k1Sha256:    app + "-V01-CS07-",
 	}
 
 	testAllGroups(t, func(group *testGroup) {

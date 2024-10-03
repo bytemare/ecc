@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 //
-// Copyright (C) 2020-2023 Daniel Bourdrez. All Rights Reserved.
+// Copyright (C) 2020-2024 Daniel Bourdrez. All Rights Reserved.
 //
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree or at
@@ -14,7 +14,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/bytemare/crypto"
+	"github.com/bytemare/ecc"
 )
 
 var (
@@ -66,7 +66,7 @@ func testPanic(s string, expectedError error, f func()) error {
 	return nil
 }
 
-func decodeScalar(t *testing.T, g crypto.Group, input string) *crypto.Scalar {
+func decodeScalar(t *testing.T, g ecc.Group, input string) *ecc.Scalar {
 	b, err := hex.DecodeString(input)
 	if err != nil {
 		t.Error(err)
@@ -80,14 +80,14 @@ func decodeScalar(t *testing.T, g crypto.Group, input string) *crypto.Scalar {
 	return s
 }
 
-func decodeElement(t *testing.T, g crypto.Group, input string) *crypto.Element {
+func decodeElement(t *testing.T, g ecc.Group, input string) *ecc.Element {
 	b, err := hex.DecodeString(input)
 	if err != nil {
 		t.Error(err)
 	}
 
 	e := g.NewElement()
-	if err := e.Decode(b); err != nil {
+	if err = e.Decode(b); err != nil {
 		t.Error(err)
 	}
 

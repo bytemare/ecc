@@ -1,16 +1,16 @@
 // SPDX-License-Group: MIT
 //
-// Copyright (C) 2020-2023 Daniel Bourdrez. All Rights Reserved.
+// Copyright (C) 2020-2024 Daniel Bourdrez. All Rights Reserved.
 //
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree or at
 // https://spdx.org/licenses/MIT.html
 
-// Package crypto exposes a prime-order elliptic curve groups with additional hash-to-curve operations.
+// Package ecc exposes a prime-order elliptic curve groups with additional hash-to-curve operations.
 //
 // It implements the latest hash-to-curve specification to date
 // (https://datatracker.ietf.org/doc/draft-irtf-cfrg-hash-to-curve/).
-package crypto
+package ecc
 
 import (
 	"crypto"
@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/bytemare/crypto/internal"
-	"github.com/bytemare/crypto/internal/edwards25519"
-	"github.com/bytemare/crypto/internal/nist"
-	"github.com/bytemare/crypto/internal/ristretto"
-	"github.com/bytemare/crypto/internal/secp256k1"
+	"github.com/bytemare/ecc/internal"
+	"github.com/bytemare/ecc/internal/edwards25519"
+	"github.com/bytemare/ecc/internal/nist"
+	"github.com/bytemare/ecc/internal/ristretto"
+	"github.com/bytemare/ecc/internal/secp256k1"
 )
 
 // Group identifies prime-order groups over elliptic curves with hash-to-group operations.
@@ -47,8 +47,8 @@ const (
 	// Edwards25519Sha512 identifies the Edwards25519 group with SHA2-512 hash-to-group hashing.
 	Edwards25519Sha512
 
-	// Secp256k1 identifies the SECp256k1 group with SHA2-256 hash-to-group hashing.
-	Secp256k1
+	// Secp256k1Sha256 identifies the SECp256k1 group with SHA2-256 hash-to-group hashing.
+	Secp256k1Sha256
 
 	maxID
 
@@ -171,7 +171,7 @@ func (g Group) init() {
 		g.initGroup(nist.P521)
 	case Edwards25519Sha512:
 		g.initGroup(edwards25519.New)
-	case Secp256k1:
+	case Secp256k1Sha256:
 		g.initGroup(secp256k1.New)
 	default:
 		panic("group not recognized")

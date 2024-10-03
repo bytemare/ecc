@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 //
-// Copyright (C) 2020-2023 Daniel Bourdrez. All Rights Reserved.
+// Copyright (C) 2020-2024 Daniel Bourdrez. All Rights Reserved.
 //
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree or at
@@ -18,8 +18,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/bytemare/crypto"
-	"github.com/bytemare/crypto/internal"
+	"github.com/bytemare/ecc"
+	"github.com/bytemare/ecc/internal"
 )
 
 func TestScalar_Group(t *testing.T) {
@@ -32,13 +32,13 @@ func TestScalar_Group(t *testing.T) {
 }
 
 func TestScalar_WrongInput(t *testing.T) {
-	exec := func(f func(*crypto.Scalar) *crypto.Scalar, arg *crypto.Scalar) func() {
+	exec := func(f func(*ecc.Scalar) *ecc.Scalar, arg *ecc.Scalar) func() {
 		return func() {
 			f(arg)
 		}
 	}
 
-	equal := func(f func(*crypto.Scalar) bool, arg *crypto.Scalar) func() {
+	equal := func(f func(*ecc.Scalar) bool, arg *ecc.Scalar) func() {
 		return func() {
 			f(arg)
 		}
@@ -46,18 +46,18 @@ func TestScalar_WrongInput(t *testing.T) {
 
 	testAllGroups(t, func(group *testGroup) {
 		scalar := group.group.NewScalar()
-		methods := []func(arg *crypto.Scalar) *crypto.Scalar{
+		methods := []func(arg *ecc.Scalar) *ecc.Scalar{
 			scalar.Add, scalar.Subtract, scalar.Multiply, scalar.Set,
 		}
 
-		var wrongGroup crypto.Group
+		var wrongGroup ecc.Group
 
 		switch group.group {
 		// The following is arbitrary, and simply aims at confusing identifiers
-		case crypto.Ristretto255Sha512, crypto.Edwards25519Sha512, crypto.Secp256k1:
-			wrongGroup = crypto.P256Sha256
-		case crypto.P256Sha256, crypto.P384Sha384, crypto.P521Sha512:
-			wrongGroup = crypto.Ristretto255Sha512
+		case ecc.Ristretto255Sha512, ecc.Edwards25519Sha512, ecc.Secp256k1Sha256:
+			wrongGroup = ecc.P256Sha256
+		case ecc.P256Sha256, ecc.P384Sha384, ecc.P521Sha512:
+			wrongGroup = ecc.Ristretto255Sha512
 
 			// Add a special test for nist groups, using a different field
 			wrongfield := ((group.group + 1) % 3) + 3
@@ -80,7 +80,7 @@ func TestScalar_WrongInput(t *testing.T) {
 	})
 }
 
-func testScalarCopySet(t *testing.T, scalar, other *crypto.Scalar) {
+func testScalarCopySet(t *testing.T, scalar, other *ecc.Scalar) {
 	// Verify they don't point to the same thing
 	if &scalar == &other {
 		t.Fatalf("Pointer to the same scalar")
@@ -125,7 +125,7 @@ func TestScalar_Set(t *testing.T) {
 	})
 }
 
-func parseScalar(s *crypto.Scalar) ([]byte, bool) {
+func parseScalar(s *ecc.Scalar) ([]byte, bool) {
 	b := s.Encode()
 	b3 := b[8:]
 	b4 := byte(0)
@@ -135,7 +135,7 @@ func parseScalar(s *crypto.Scalar) ([]byte, bool) {
 	return b[:8], b4 == 0
 }
 
-func testScalarUInt64(t *testing.T, s *crypto.Scalar, expectedValue uint64, expectedError error) {
+func testScalarUInt64(t *testing.T, s *ecc.Scalar, expectedValue uint64, expectedError error) {
 	i, err := s.UInt64()
 
 	if err == nil {
@@ -194,7 +194,7 @@ func TestScalar_SetUInt64(t *testing.T) {
 		ref := make([]byte, group.group.ScalarLength())
 
 		switch group.group {
-		case crypto.Ristretto255Sha512, crypto.Edwards25519Sha512:
+		case ecc.Ristretto255Sha512, ecc.Edwards25519Sha512:
 			binary.LittleEndian.PutUint64(ref, math.MaxUint64)
 		default:
 			binary.BigEndian.PutUint64(ref[group.group.ScalarLength()-8:], math.MaxUint64)
@@ -274,7 +274,7 @@ func TestScalar_Arithmetic(t *testing.T) {
 	})
 }
 
-func scalarTestZero(t *testing.T, g crypto.Group) {
+func scalarTestZero(t *testing.T, g ecc.Group) {
 	zero := g.NewScalar()
 	if !zero.IsZero() {
 		t.Fatal("expected zero scalar")
@@ -296,7 +296,7 @@ func scalarTestZero(t *testing.T, g crypto.Group) {
 	}
 }
 
-func scalarTestOne(t *testing.T, g crypto.Group) {
+func scalarTestOne(t *testing.T, g ecc.Group) {
 	one := g.NewScalar().One()
 	m := one.Copy()
 	if !one.Equal(m.Multiply(m)) {
@@ -304,7 +304,7 @@ func scalarTestOne(t *testing.T, g crypto.Group) {
 	}
 }
 
-func scalarTestMinusOne(t *testing.T, g crypto.Group) {
+func scalarTestMinusOne(t *testing.T, g ecc.Group) {
 	m1 := g.NewScalar().MinusOne()
 	one := g.NewScalar().One()
 	if !m1.Add(one).IsZero() {
@@ -312,14 +312,14 @@ func scalarTestMinusOne(t *testing.T, g crypto.Group) {
 	}
 }
 
-func scalarTestRandom(t *testing.T, g crypto.Group) {
+func scalarTestRandom(t *testing.T, g ecc.Group) {
 	r := g.NewScalar().Random()
 	if r.Equal(g.NewScalar().Zero()) {
 		t.Fatalf("random scalar is zero: %v", r.Hex())
 	}
 }
 
-func scalarTestEqual(t *testing.T, g crypto.Group) {
+func scalarTestEqual(t *testing.T, g ecc.Group) {
 	zero := g.NewScalar().Zero()
 	zero2 := g.NewScalar().Zero()
 
@@ -343,36 +343,36 @@ func scalarTestEqual(t *testing.T, g crypto.Group) {
 	}
 }
 
-func scalarTestLessOrEqual(t *testing.T, g crypto.Group) {
+func scalarTestLessOrEqual(t *testing.T, g ecc.Group) {
 	zero := g.NewScalar().Zero()
 	one := g.NewScalar().One()
 	two := g.NewScalar().One().Add(one)
 
-	if g.NewScalar().Random().LessOrEqual(nil) != 0 {
+	if g.NewScalar().Random().LessOrEqual(nil) {
 		t.Fatal(errUnExpectedEquality)
 	}
 
-	if zero.LessOrEqual(one) != 1 {
+	if !zero.LessOrEqual(one) {
 		t.Fatal("expected 0 < 1")
 	}
 
-	if one.LessOrEqual(two) != 1 {
+	if !one.LessOrEqual(two) {
 		t.Fatal("expected 1 < 2")
 	}
 
-	if one.LessOrEqual(zero) == 1 {
+	if one.LessOrEqual(zero) {
 		t.Fatal("expected 1 > 0")
 	}
 
-	if two.LessOrEqual(one) == 1 {
+	if two.LessOrEqual(one) {
 		t.Fatal("expected 2 > 1")
 	}
 
-	if two.LessOrEqual(two) != 1 {
+	if !two.LessOrEqual(two) {
 		t.Fatal("expected 2 == 2")
 	}
 
-	var r, s *crypto.Scalar
+	var r, s *ecc.Scalar
 	for {
 		s = g.NewScalar().Random()
 		r = s.Add(g.NewScalar().One())
@@ -381,12 +381,12 @@ func scalarTestLessOrEqual(t *testing.T, g crypto.Group) {
 		}
 	}
 
-	if s.LessOrEqual(r) != 1 {
+	if !s.LessOrEqual(r) {
 		t.Fatalf("expected s < s + 1:")
 	}
 }
 
-func scalarTestAdd(t *testing.T, g crypto.Group) {
+func scalarTestAdd(t *testing.T, g ecc.Group) {
 	r := g.NewScalar().Random()
 	cpy := r.Copy()
 	if !r.Add(nil).Equal(cpy) {
@@ -394,7 +394,7 @@ func scalarTestAdd(t *testing.T, g crypto.Group) {
 	}
 }
 
-func scalarTestSubtract(t *testing.T, g crypto.Group) {
+func scalarTestSubtract(t *testing.T, g ecc.Group) {
 	r := g.NewScalar().Random()
 	cpy := r.Copy()
 	if !r.Subtract(nil).Equal(cpy) {
@@ -402,14 +402,14 @@ func scalarTestSubtract(t *testing.T, g crypto.Group) {
 	}
 }
 
-func scalarTestMultiply(t *testing.T, g crypto.Group) {
+func scalarTestMultiply(t *testing.T, g ecc.Group) {
 	s := g.NewScalar().Random()
 	if !s.Multiply(nil).IsZero() {
 		t.Fatal("expected zero")
 	}
 }
 
-func scalarTestPow(t *testing.T, g crypto.Group) {
+func scalarTestPow(t *testing.T, g ecc.Group) {
 	// s**nil = 1
 	s := g.NewScalar().Random()
 	if !s.Pow(nil).Equal(g.NewScalar().One()) {
@@ -495,7 +495,7 @@ func scalarTestPow(t *testing.T, g crypto.Group) {
 
 	switch g {
 	// These are in little-endian
-	case crypto.Ristretto255Sha512, crypto.Edwards25519Sha512:
+	case ecc.Ristretto255Sha512, ecc.Edwards25519Sha512:
 		e := s.Encode()
 		for i, j := 0, len(e)-1; i < j; i++ {
 			e[i], e[j] = e[j], e[i]
@@ -522,10 +522,10 @@ func scalarTestPow(t *testing.T, g crypto.Group) {
 	}
 }
 
-func bigIntExp(t *testing.T, g crypto.Group, base, exp *big.Int) *crypto.Scalar {
+func bigIntExp(t *testing.T, g ecc.Group, base, exp *big.Int) *ecc.Scalar {
 	orderBytes := g.Order()
 
-	if g == crypto.Ristretto255Sha512 || g == crypto.Edwards25519Sha512 {
+	if g == ecc.Ristretto255Sha512 || g == ecc.Edwards25519Sha512 {
 		slices.Reverse(orderBytes)
 	}
 
@@ -535,7 +535,7 @@ func bigIntExp(t *testing.T, g crypto.Group, base, exp *big.Int) *crypto.Scalar 
 	b := make([]byte, g.ScalarLength())
 	r.FillBytes(b)
 
-	if g == crypto.Ristretto255Sha512 || g == crypto.Edwards25519Sha512 {
+	if g == ecc.Ristretto255Sha512 || g == ecc.Edwards25519Sha512 {
 		slices.Reverse(b)
 	}
 
@@ -547,7 +547,7 @@ func bigIntExp(t *testing.T, g crypto.Group, base, exp *big.Int) *crypto.Scalar 
 	return result
 }
 
-func scalarTestInvert(t *testing.T, g crypto.Group) {
+func scalarTestInvert(t *testing.T, g ecc.Group) {
 	s := g.NewScalar().Random()
 	sqr := s.Copy().Multiply(s)
 
