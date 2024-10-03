@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/bytemare/ecc"
+	"github.com/bytemare/ecc/debug"
 	"github.com/bytemare/ecc/internal"
 )
 
@@ -226,33 +227,29 @@ func TestScalar_Decode_OutOfBounds(t *testing.T) {
 
 		// Decode invalid length
 		errMessage := "invalid scalar length"
-		encoded := make([]byte, 2)
-		big.NewInt(1).FillBytes(encoded)
+		bad := []byte{0, 1}
 
 		expected := errors.New(decodeErrPrefix + errMessage)
-		if err := group.group.NewScalar().Decode(encoded); err == nil || err.Error() != expected.Error() {
+		if err := group.group.NewScalar().Decode(bad); err == nil || err.Error() != expected.Error() {
 			t.Errorf("expected error %q, got %v", expected, err)
 		}
 
 		expected = errors.New(unmarshallBinaryErrPrefix + errMessage)
-		if err := group.group.NewScalar().UnmarshalBinary(encoded); err == nil || err.Error() != expected.Error() {
+		if err := group.group.NewScalar().UnmarshalBinary(bad); err == nil || err.Error() != expected.Error() {
 			t.Errorf("expected error %q, got %v", expected, err)
 		}
 
 		// Decode a scalar higher than order
 		errMessage = "invalid scalar encoding"
-		encoded = make([]byte, group.group.ScalarLength())
-		order := new(big.Int).SetBytes(group.group.Order())
-		order.Add(order, big.NewInt(1))
-		order.FillBytes(encoded)
+		bad = debug.BadScalarHigh(group.group)
 
 		expected = errors.New(decodeErrPrefix + errMessage)
-		if err := group.group.NewScalar().Decode(encoded); err == nil || err.Error() != expected.Error() {
+		if err := group.group.NewScalar().Decode(bad); err == nil || err.Error() != expected.Error() {
 			t.Errorf("expected error %q, got %v", expected, err)
 		}
 
 		expected = errors.New(unmarshallBinaryErrPrefix + errMessage)
-		if err := group.group.NewScalar().UnmarshalBinary(encoded); err == nil || err.Error() != expected.Error() {
+		if err := group.group.NewScalar().UnmarshalBinary(bad); err == nil || err.Error() != expected.Error() {
 			t.Errorf("expected error %q, got %v", expected, err)
 		}
 	})
