@@ -1,6 +1,6 @@
 // SPDX-License-Group: MIT
 //
-// Copyright (C) 2020-2023 Daniel Bourdrez. All Rights Reserved.
+// Copyright (C) 2020-2024 Daniel Bourdrez. All Rights Reserved.
 //
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree or at
@@ -15,8 +15,8 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/bytemare/crypto"
-	"github.com/bytemare/crypto/internal"
+	"github.com/bytemare/ecc"
+	"github.com/bytemare/ecc/internal"
 )
 
 const (
@@ -26,7 +26,7 @@ const (
 	errWrongGroup         = "wrong group"
 )
 
-func testElementCopySet(t *testing.T, element, other *crypto.Element) {
+func testElementCopySet(t *testing.T, element, other *ecc.Element) {
 	// Verify they don't point to the same thing
 	if &element == &other {
 		t.Fatalf("Pointer to the same scalar")
@@ -81,19 +81,19 @@ func TestElement_Set(t *testing.T) {
 }
 
 func TestElement_WrongInput(t *testing.T) {
-	exec := func(f func(*crypto.Element) *crypto.Element, arg *crypto.Element) func() {
+	exec := func(f func(*ecc.Element) *ecc.Element, arg *ecc.Element) func() {
 		return func() {
 			_ = f(arg)
 		}
 	}
 
-	equal := func(f func(*crypto.Element) bool, arg *crypto.Element) func() {
+	equal := func(f func(*ecc.Element) bool, arg *ecc.Element) func() {
 		return func() {
 			f(arg)
 		}
 	}
 
-	mult := func(f func(*crypto.Scalar) *crypto.Element, arg *crypto.Scalar) func() {
+	mult := func(f func(*ecc.Scalar) *ecc.Element, arg *ecc.Scalar) func() {
 		return func() {
 			f(arg)
 		}
@@ -101,14 +101,14 @@ func TestElement_WrongInput(t *testing.T) {
 
 	testAllGroups(t, func(group *testGroup) {
 		element := group.group.NewElement()
-		var alternativeGroup crypto.Group
+		var alternativeGroup ecc.Group
 
 		switch group.group {
 		// The following is arbitrary, and simply aims at confusing identifiers
-		case crypto.Ristretto255Sha512, crypto.Edwards25519Sha512:
-			alternativeGroup = crypto.P256Sha256
-		case crypto.P256Sha256, crypto.P384Sha384, crypto.P521Sha512, crypto.Secp256k1:
-			alternativeGroup = crypto.Ristretto255Sha512
+		case ecc.Ristretto255Sha512, ecc.Edwards25519Sha512:
+			alternativeGroup = ecc.P256Sha256
+		case ecc.P256Sha256, ecc.P384Sha384, ecc.P521Sha512, ecc.Secp256k1Sha256:
+			alternativeGroup = ecc.Ristretto255Sha512
 		default:
 			t.Fatalf("Invalid group id %d", group.group)
 		}
@@ -136,7 +136,7 @@ func TestElement_WrongInput(t *testing.T) {
 
 	// Specifically test Ristretto
 	if err := testPanic(errWrongGroup, internal.ErrCastScalar,
-		mult(crypto.Ristretto255Sha512.NewElement().Multiply, crypto.P384Sha384.NewScalar())); err != nil {
+		mult(ecc.Ristretto255Sha512.NewElement().Multiply, ecc.P384Sha384.NewScalar())); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -178,17 +178,17 @@ func TestElement_Decode_OutOfBounds(t *testing.T) {
 		unmarshallBinaryErr := "element UnmarshalBinary: "
 		errMessage := ""
 		switch group.group {
-		case crypto.Ristretto255Sha512:
+		case ecc.Ristretto255Sha512:
 			errMessage = "invalid Ristretto encoding"
-		case crypto.P256Sha256:
+		case ecc.P256Sha256:
 			errMessage = "invalid P256 element encoding"
-		case crypto.P384Sha384:
+		case ecc.P384Sha384:
 			errMessage = "invalid P384Element encoding"
-		case crypto.P521Sha512:
+		case ecc.P521Sha512:
 			errMessage = "invalid P521Element encoding"
-		case crypto.Edwards25519Sha512:
+		case ecc.Edwards25519Sha512:
 			errMessage = "edwards25519: invalid point encoding"
-		case crypto.Secp256k1:
+		case ecc.Secp256k1Sha256:
 			errMessage = "invalid point encoding"
 		}
 
@@ -208,9 +208,9 @@ func TestElement_Decode_OutOfBounds(t *testing.T) {
 		x.Add(x, big.NewInt(1))
 
 		switch group.group {
-		case crypto.Ristretto255Sha512, crypto.Edwards25519Sha512:
+		case ecc.Ristretto255Sha512, ecc.Edwards25519Sha512:
 			x.FillBytes(encoded)
-		case crypto.P256Sha256, crypto.P384Sha384, crypto.P521Sha512, crypto.Secp256k1:
+		case ecc.P256Sha256, ecc.P384Sha384, ecc.P521Sha512, ecc.Secp256k1Sha256:
 			encoded[0] = byte(2 | y.Bit(0)&1)
 			x.FillBytes(encoded[1:])
 		default:
@@ -324,7 +324,7 @@ func TestElement_Arithmetic(t *testing.T) {
 	})
 }
 
-func elementTestEqual(t *testing.T, g crypto.Group) {
+func elementTestEqual(t *testing.T, g ecc.Group) {
 	base := g.Base()
 	base2 := g.Base()
 
@@ -343,7 +343,7 @@ func elementTestEqual(t *testing.T, g crypto.Group) {
 	}
 }
 
-func elementTestAdd(t *testing.T, g crypto.Group) {
+func elementTestAdd(t *testing.T, g ecc.Group) {
 	// Verify whether add yields the same element when given nil
 	base := g.Base()
 	cpy := base.Copy()
@@ -394,7 +394,7 @@ func elementTestAdd(t *testing.T, g crypto.Group) {
 	}
 }
 
-func elementTestNegate(t *testing.T, g crypto.Group) {
+func elementTestNegate(t *testing.T, g ecc.Group) {
 	// 0 = -0
 	id := g.NewElement().Identity()
 	negId := g.NewElement().Identity().Negate()
@@ -421,7 +421,7 @@ func elementTestNegate(t *testing.T, g crypto.Group) {
 	}
 }
 
-func elementTestDouble(t *testing.T, g crypto.Group) {
+func elementTestDouble(t *testing.T, g ecc.Group) {
 	// Verify whether double works like adding
 	base := g.Base()
 	double := g.Base().Add(g.Base())
@@ -436,7 +436,7 @@ func elementTestDouble(t *testing.T, g crypto.Group) {
 	}
 }
 
-func elementTestSubstract(t *testing.T, g crypto.Group) {
+func elementTestSubstract(t *testing.T, g ecc.Group) {
 	base := g.Base()
 
 	// Verify whether subtracting yields the same element when given nil.
@@ -451,7 +451,7 @@ func elementTestSubstract(t *testing.T, g crypto.Group) {
 	}
 }
 
-func elementTestMultiply(t *testing.T, g crypto.Group) {
+func elementTestMultiply(t *testing.T, g ecc.Group) {
 	scalar := g.NewScalar()
 
 	// base = base * 1
@@ -488,7 +488,7 @@ func elementTestMultiply(t *testing.T, g crypto.Group) {
 	}
 }
 
-func elementTestIdentity(t *testing.T, g crypto.Group) {
+func elementTestIdentity(t *testing.T, g ecc.Group) {
 	id := g.NewElement()
 	if !id.IsIdentity() {
 		t.Fatal(errExpectedIdentity)

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 //
-// Copyright (C)2020-2023 Daniel Bourdrez. All Rights Reserved.
+// Copyright (C)2020-2024 Daniel Bourdrez. All Rights Reserved.
 //
 // This source code is licensed under the MIT license found in theg
 // LICENSE file in the root directory of this source tree or at
@@ -14,7 +14,7 @@ import (
 
 	"github.com/bytemare/secp256k1"
 
-	"github.com/bytemare/crypto/internal"
+	"github.com/bytemare/ecc/internal"
 )
 
 // Element implements the Element interface for the Secp256k1 group element.

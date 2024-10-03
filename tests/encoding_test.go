@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 //
-// Copyright (C) 2024 Daniel Bourdrez. All Rights Reserved.
+// Copyright (C) 2020-2024 Daniel Bourdrez. All Rights Reserved.
 //
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree or at
@@ -18,16 +18,16 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bytemare/crypto"
+	"github.com/bytemare/ecc"
 )
 
 type serde interface {
 	Encode() []byte
 	Decode(data []byte) error
-	MarshalJSON() ([]byte, error)
-	UnmarshalJSON(data []byte) error
 	Hex() string
 	DecodeHex(h string) error
+	MarshalJSON() ([]byte, error)
+	UnmarshalJSON(data []byte) error
 	encoding.BinaryMarshaler
 	encoding.BinaryUnmarshaler
 }
@@ -129,7 +129,7 @@ func (t *encodingTest) run() error {
 	return nil
 }
 
-func testScalarEncodings(g crypto.Group, f makeEncodeTest) error {
+func testScalarEncodings(g ecc.Group, f makeEncodeTest) error {
 	source, receiver := g.NewScalar().Random(), g.NewScalar()
 	t := newEncodingTest(source, receiver)
 
@@ -144,7 +144,7 @@ func testScalarEncodings(g crypto.Group, f makeEncodeTest) error {
 	return nil
 }
 
-func testElementEncodings(g crypto.Group, f makeEncodeTest) error {
+func testElementEncodings(g ecc.Group, f makeEncodeTest) error {
 	source, receiver := g.Base(), g.NewElement()
 	t := newEncodingTest(source, receiver)
 
@@ -159,7 +159,7 @@ func testElementEncodings(g crypto.Group, f makeEncodeTest) error {
 	return nil
 }
 
-func TestEncoding(t *testing.T) {
+func TestScalar_Encoding(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		g := group.group
 		testDecodeEmpty(t, group.group.NewScalar().Random())
@@ -171,7 +171,7 @@ func TestEncoding(t *testing.T) {
 	})
 }
 
-func TestEncoding_Element(t *testing.T) {
+func TestElement_Encoding(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		g := group.group
 		testDecodeEmpty(t, group.group.Base())
