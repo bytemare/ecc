@@ -208,8 +208,8 @@ func TestElement_Decode_Identity(t *testing.T) {
 
 func TestElement_Decode_Bad(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
-		decodeErr := "element Decode: "
-		unmarshallBinaryErr := "element UnmarshalBinary: "
+		decodePrefix := "element Decode: "
+		unmarshallBinaryPrefix := "element UnmarshalBinary: "
 		errMessage := ""
 		switch group.group {
 		case ecc.Ristretto255Sha512:
@@ -226,31 +226,37 @@ func TestElement_Decode_Bad(t *testing.T) {
 			errMessage = "invalid secp256k1 encoding: invalid point encoding"
 		}
 
-		decodeErr += errMessage
-		unmarshallBinaryErr += errMessage
-
 		// off curve
 		bad := debug.BadElementOffCurve(group.group)
 
-		expected := errors.New(decodeErr)
+		expected := errors.New(decodePrefix + errMessage)
 		if err := group.group.NewElement().Decode(bad); err == nil || err.Error() != expected.Error() {
 			t.Errorf("expected error %q, got %v\n", expected, err)
 		}
 
-		expected = errors.New(unmarshallBinaryErr)
+		expected = errors.New(unmarshallBinaryPrefix + errMessage)
 		if err := group.group.NewElement().UnmarshalBinary(bad); err == nil || err.Error() != expected.Error() {
 			t.Errorf("expected error %q, got %v", expected, err)
 		}
 
 		// bad encoding, e.g. sign
+		switch group.group {
+		case ecc.P256Sha256:
+			errMessage = "invalid P256 point encoding"
+		case ecc.P384Sha384:
+			errMessage = "invalid P384 point encoding"
+		case ecc.P521Sha512:
+			errMessage = "invalid P521 point encoding"
+		}
+
 		bad = debug.BadElementEncoding(group.group)
 
-		expected = errors.New(decodeErr)
+		expected = errors.New(decodePrefix + errMessage)
 		if err := group.group.NewElement().Decode(bad); err == nil || err.Error() != expected.Error() {
 			t.Errorf("expected error %q, got %v\n", expected, err)
 		}
 
-		expected = errors.New(unmarshallBinaryErr)
+		expected = errors.New(unmarshallBinaryPrefix + errMessage)
 		if err := group.group.NewElement().UnmarshalBinary(bad); err == nil || err.Error() != expected.Error() {
 			t.Errorf("expected error %q, got %v", expected, err)
 		}
