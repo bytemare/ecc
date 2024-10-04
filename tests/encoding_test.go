@@ -6,7 +6,7 @@
 // LICENSE file in the root directory of this source tree or at
 // https://spdx.org/licenses/MIT.html
 
-package group_test
+package ecc_test
 
 import (
 	"bytes"
@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/bytemare/ecc"
+	eccEncoding "github.com/bytemare/ecc/encoding"
 )
 
 type serde interface {
@@ -259,6 +260,55 @@ func TestEncoding_Hex_Fails(t *testing.T) {
 		}
 
 		if !e.Equal(element) {
+			t.Fatal(errExpectedEquality)
+		}
+	})
+}
+
+func TestJSONReGetGroup(t *testing.T) {
+	testAllGroups(t, func(group *testGroup) {
+		test := struct {
+			Group ecc.Group `json:"group"`
+			Int   int       `json:"int"`
+		}{
+			Group: group.group,
+			Int:   1,
+		}
+
+		enc, err := json.Marshal(test)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		g, err := eccEncoding.JSONReGetGroup(string(enc))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if g != group.group {
+			t.Fatal(errExpectedEquality)
+		}
+
+		// with another key
+		test2 := struct {
+			Group ecc.Group `json:"ciphersuite"`
+			Int   int       `json:"int"`
+		}{
+			Group: group.group,
+			Int:   1,
+		}
+
+		enc, err = json.Marshal(test2)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		g, err = eccEncoding.JSONReGetGroup(string(enc), "ciphersuite")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if g != group.group {
 			t.Fatal(errExpectedEquality)
 		}
 	})
