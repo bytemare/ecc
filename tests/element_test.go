@@ -12,10 +12,10 @@ import (
 	"encoding/hex"
 	"errors"
 	"log"
-	"math/big"
 	"testing"
 
 	"github.com/bytemare/ecc"
+	"github.com/bytemare/ecc/debug"
 	"github.com/bytemare/ecc/internal"
 )
 
@@ -172,10 +172,44 @@ func TestElement_EncodedLength(t *testing.T) {
 	})
 }
 
-func TestElement_Decode_OutOfBounds(t *testing.T) {
+func TestElement_Decode_Identity(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		decodeErr := "element Decode: "
-		unmarshallBinaryErr := "element UnmarshalBinary: "
+		errMessage := ""
+		switch group.group {
+		case ecc.Ristretto255Sha512:
+			errMessage = "invalid Ristretto encoding: infinity/identity point"
+		case ecc.P256Sha256:
+			errMessage = "invalid P256 point encoding"
+		case ecc.P384Sha384:
+			errMessage = "invalid P384 point encoding"
+		case ecc.P521Sha512:
+			errMessage = "invalid P521 point encoding"
+		case ecc.Edwards25519Sha512:
+			errMessage = "invalid edwards25519 encoding: infinity/identity point"
+		case ecc.Secp256k1Sha256:
+			errMessage = "invalid secp256k1 encoding: invalid point encoding"
+		}
+
+		decodeErr += errMessage
+
+		id := group.group.NewElement().Identity()
+
+		if !id.IsIdentity() {
+			t.Fatal(errExpectedIdentity)
+		}
+
+		expected := errors.New(decodeErr)
+		if err := group.group.NewElement().Decode(id.Encode()); err == nil || err.Error() != expected.Error() {
+			t.Errorf("expected error %q, got %v\n", expected, err)
+		}
+	})
+}
+
+func TestElement_Decode_Bad(t *testing.T) {
+	testAllGroups(t, func(group *testGroup) {
+		decodePrefix := "element Decode: "
+		unmarshallBinaryPrefix := "element UnmarshalBinary: "
 		errMessage := ""
 		switch group.group {
 		case ecc.Ristretto255Sha512:
@@ -189,41 +223,41 @@ func TestElement_Decode_OutOfBounds(t *testing.T) {
 		case ecc.Edwards25519Sha512:
 			errMessage = "edwards25519: invalid point encoding"
 		case ecc.Secp256k1Sha256:
-			errMessage = "invalid point encoding"
+			errMessage = "invalid secp256k1 encoding: invalid point encoding"
 		}
 
-		decodeErr += errMessage
-		unmarshallBinaryErr += errMessage
+		// off curve
+		bad := debug.BadElementOffCurve(group.group)
 
-		encoded := make([]byte, group.group.ElementLength())
-
-		y := big.NewInt(0)
-
-		x, ok := new(big.Int).SetString(group.fieldOrder, 0)
-		if !ok {
-			t.Fatalf("setting int in base %d failed: %v", 0, group.fieldOrder)
+		expected := errors.New(decodePrefix + errMessage)
+		if err := group.group.NewElement().Decode(bad); err == nil || err.Error() != expected.Error() {
+			t.Errorf("expected error %q, got %v\n", expected, err)
 		}
 
-		// x exceeds the order
-		x.Add(x, big.NewInt(1))
-
-		switch group.group {
-		case ecc.Ristretto255Sha512, ecc.Edwards25519Sha512:
-			x.FillBytes(encoded)
-		case ecc.P256Sha256, ecc.P384Sha384, ecc.P521Sha512, ecc.Secp256k1Sha256:
-			encoded[0] = byte(2 | y.Bit(0)&1)
-			x.FillBytes(encoded[1:])
-		default:
-			t.Fatalf("non registered group %s", group.group)
-		}
-
-		expected := errors.New(decodeErr)
-		if err := group.group.NewElement().Decode(encoded[:]); err == nil || err.Error() != expected.Error() {
+		expected = errors.New(unmarshallBinaryPrefix + errMessage)
+		if err := group.group.NewElement().UnmarshalBinary(bad); err == nil || err.Error() != expected.Error() {
 			t.Errorf("expected error %q, got %v", expected, err)
 		}
 
-		expected = errors.New(unmarshallBinaryErr)
-		if err := group.group.NewElement().UnmarshalBinary(encoded[:]); err == nil || err.Error() != expected.Error() {
+		// bad encoding, e.g. sign
+		switch group.group {
+		case ecc.P256Sha256:
+			errMessage = "invalid P256 point encoding"
+		case ecc.P384Sha384:
+			errMessage = "invalid P384 point encoding"
+		case ecc.P521Sha512:
+			errMessage = "invalid P521 point encoding"
+		}
+
+		bad = debug.BadElementEncoding(group.group)
+
+		expected = errors.New(decodePrefix + errMessage)
+		if err := group.group.NewElement().Decode(bad); err == nil || err.Error() != expected.Error() {
+			t.Errorf("expected error %q, got %v\n", expected, err)
+		}
+
+		expected = errors.New(unmarshallBinaryPrefix + errMessage)
+		if err := group.group.NewElement().UnmarshalBinary(bad); err == nil || err.Error() != expected.Error() {
 			t.Errorf("expected error %q, got %v", expected, err)
 		}
 	})

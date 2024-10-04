@@ -161,7 +161,7 @@ func (e *Element) Decode(data []byte) error {
 
 	// superfluous identity check
 	if element.Equal(ed.NewIdentityPoint()) == 1 {
-		return internal.ErrIdentity
+		return fmt.Errorf("invalid edwards25519 encoding: %w", internal.ErrIdentity)
 	}
 
 	e.element = *element

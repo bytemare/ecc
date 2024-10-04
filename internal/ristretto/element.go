@@ -167,7 +167,7 @@ func (e *Element) Decode(data []byte) error {
 
 	// superfluous identity check
 	if element.Equal(ristretto255.NewElement().Zero()) == 1 {
-		return internal.ErrIdentity
+		return fmt.Errorf("invalid Ristretto encoding: %w", internal.ErrIdentity)
 	}
 
 	e.element = *element

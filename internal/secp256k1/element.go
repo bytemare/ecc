@@ -134,7 +134,7 @@ func (e *Element) XCoordinate() []byte {
 // Decode sets the receiver to a decoding of the input data, and returns an error on failure.
 func (e *Element) Decode(data []byte) error {
 	if err := e.element.Decode(data); err != nil {
-		return fmt.Errorf("%w", err)
+		return fmt.Errorf("invalid secp256k1 encoding: %w", err)
 	}
 
 	return nil
