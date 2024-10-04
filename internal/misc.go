@@ -16,6 +16,9 @@ import (
 )
 
 var (
+	// ErrInvalidGroup indicates usage of an unavailable or invalid group.
+	ErrInvalidGroup = errors.New("invalid group")
+
 	// ErrParamNilScalar indicates a forbidden nil or empty scalar.
 	ErrParamNilScalar = errors.New("nil or empty scalar")
 
@@ -54,6 +57,12 @@ var (
 
 	// ErrUInt64TooBig indicates that the scalar is higher than the allowed values for uint64.
 	ErrUInt64TooBig = errors.New("scalar is too big to be uint64")
+
+	// ErrDecodingInvalidLength indicates an invalid encoding length.
+	ErrDecodingInvalidLength = errors.New("invalid encoding length")
+
+	// ErrDecodingInvalidJSONEncoding indicates an invalid JSON encoding.
+	ErrDecodingInvalidJSONEncoding = errors.New("invalid JSON encoding")
 )
 
 // An Encoder can encode itself to machine or human-readable forms.
