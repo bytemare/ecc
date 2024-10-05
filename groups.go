@@ -60,7 +60,6 @@ const (
 var (
 	once          [maxID - 1]sync.Once
 	groups        [maxID - 1]internal.Group
-	errInvalidID  = errors.New("invalid group identifier")
 	errZeroLenDST = errors.New("zero-length DST")
 )
 
@@ -71,7 +70,7 @@ func (g Group) Available() bool {
 
 func (g Group) get() internal.Group {
 	if !g.Available() {
-		panic(errInvalidID)
+		panic(internal.ErrInvalidGroup)
 	}
 
 	once[g-1].Do(g.init)

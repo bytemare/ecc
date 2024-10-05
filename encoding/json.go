@@ -19,7 +19,7 @@ import (
 )
 
 func jsonReGetField(key, s, catch string) (string, error) {
-	r := fmt.Sprintf(`%q:%s`, key, catch)
+	r := fmt.Sprintf(`%q:%s`, regexp.QuoteMeta(key), catch)
 	re := regexp.MustCompile(r)
 	matches := re.FindStringSubmatch(s)
 
@@ -30,15 +30,9 @@ func jsonReGetField(key, s, catch string) (string, error) {
 	return matches[1], nil
 }
 
-// JSONReGetGroup attempts to find the group JSON encoding in s. The optional key argument overrides the default key the
-// regex will use to look for the group.
-func JSONReGetGroup(s string, key ...string) (ecc.Group, error) {
-	reKey := "group"
-	if len(key) != 0 && key[0] != "" {
-		reKey = key[0]
-	}
-
-	f, err := jsonReGetField(reKey, s, `(\w+)`)
+// JSONReGetGroup attempts to find the group JSON encoding in s.
+func JSONReGetGroup(s string) (ecc.Group, error) {
+	f, err := jsonReGetField("group", s, `(\w+)`)
 	if err != nil {
 		return 0, err
 	}
