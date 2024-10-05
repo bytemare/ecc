@@ -24,6 +24,8 @@ var (
 	errWrapGroup      = "%s: %w"
 )
 
+// hasPanic runs f and recovers from a panic if any occurred, and returns whether it did and the panic message as an
+// error.
 func hasPanic(f func()) (has bool, err error) {
 	defer func() {
 		var report any

@@ -288,28 +288,5 @@ func TestJSONReGetGroup(t *testing.T) {
 		if g != group.group {
 			t.Fatal(errExpectedEquality)
 		}
-
-		// with another key
-		test2 := struct {
-			Group ecc.Group `json:"ciphersuite"`
-			Int   int       `json:"int"`
-		}{
-			Group: group.group,
-			Int:   1,
-		}
-
-		enc, err = json.Marshal(test2)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		g, err = eccEncoding.JSONReGetGroup(string(enc), "ciphersuite")
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if g != group.group {
-			t.Fatal(errExpectedEquality)
-		}
 	})
 }

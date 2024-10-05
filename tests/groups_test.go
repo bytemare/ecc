@@ -10,11 +10,11 @@ package ecc_test
 
 import (
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/bytemare/ecc"
+	"github.com/bytemare/ecc/internal"
 )
 
 const consideredAvailableFmt = "%v is considered available when it must not"
@@ -28,8 +28,6 @@ func TestAvailability(t *testing.T) {
 }
 
 func TestNonAvailability(t *testing.T) {
-	errInvalidID := errors.New("invalid group identifier")
-
 	oob := ecc.Group(0)
 	if oob.Available() {
 		t.Errorf(consideredAvailableFmt, oob)
@@ -40,7 +38,7 @@ func TestNonAvailability(t *testing.T) {
 		t.Errorf(consideredAvailableFmt, d)
 	}
 
-	if err := testPanic("decaf availability", errInvalidID,
+	if err := testPanic("decaf availability", internal.ErrInvalidGroup,
 		func() { _ = d.String() }); err != nil {
 		t.Fatal(err)
 	}
@@ -50,13 +48,13 @@ func TestNonAvailability(t *testing.T) {
 		t.Errorf(consideredAvailableFmt, oob)
 	}
 
-	if err := testPanic("oob availability", errInvalidID,
+	if err := testPanic("oob availability", internal.ErrInvalidGroup,
 		func() { _ = oob.String() }); err != nil {
 		t.Fatal(err)
 	}
 
 	oob++
-	if err := testPanic("oob availability", errInvalidID,
+	if err := testPanic("oob availability", internal.ErrInvalidGroup,
 		func() { _ = oob.String() }); err != nil {
 		t.Fatal(err)
 	}
