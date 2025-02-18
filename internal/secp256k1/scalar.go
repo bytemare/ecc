@@ -137,7 +137,7 @@ func (s *Scalar) Equal(scalar internal.Scalar) int {
 // LessOrEqual returns 1 if s <= scalar and 0 otherwise.
 func (s *Scalar) LessOrEqual(scalar internal.Scalar) int {
 	sc := assert(scalar)
-	return s.scalar.LessOrEqual(sc.scalar)
+	return int(s.scalar.LessOrEqual(sc.scalar)) //nolint:gosec // LessOrEqual returns 0 or 1, we're fine.
 }
 
 // IsZero returns whether the scalar is 0.

@@ -142,7 +142,7 @@ func TestGroup_ElementLength(t *testing.T) {
 func TestHashFunc(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		if group.group.HashFunc() != group.hash {
-			t.Error(errExpectedEquality)
+			t.Errorf("%s: %q vs. %q", errExpectedEquality, group.group.HashFunc(), group.hash)
 		}
 	})
 }

@@ -83,7 +83,7 @@ func adjust(in []byte) []byte {
 
 func reverse(b []byte) []byte {
 	l := len(b) - 1
-	for i := 0; i < len(b)/2; i++ {
+	for i := range len(b) / 2 {
 		b[i], b[l-i] = b[l-i], b[i]
 	}
 

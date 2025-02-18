@@ -54,11 +54,11 @@ type Element interface {
 	XCoordinate() []byte
 
 	// Decode sets the receiver to a decoding of the input data, and returns an error on failure.
-	Decode(data []byte) error
+	Decode([]byte) error
 
 	// Hex returns the fixed-sized hexadecimal encoding of e.
 	Hex() string
 
 	// DecodeHex sets e to the decoding of the hex encoded element.
-	DecodeHex(h string) error
+	DecodeHex(string) error
 }

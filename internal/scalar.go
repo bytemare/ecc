@@ -37,7 +37,7 @@ type Scalar interface {
 	Multiply(Scalar) Scalar
 
 	// Pow sets s to s**scalar modulo the group order, and returns s. If scalar is nil, it returns 1.
-	Pow(scalar Scalar) Scalar
+	Pow(Scalar) Scalar
 
 	// Invert sets the receiver to the scalar's modular inverse ( 1 / scalar ), and returns it.
 	Invert() Scalar
@@ -46,7 +46,7 @@ type Scalar interface {
 	Equal(Scalar) int
 
 	// LessOrEqual returns 1 if s <= scalar, and 0 otherwise.
-	LessOrEqual(scalar Scalar) int
+	LessOrEqual(Scalar) int
 
 	// IsZero returns whether the scalar is 0.
 	IsZero() bool
@@ -55,7 +55,7 @@ type Scalar interface {
 	Set(Scalar) Scalar
 
 	// SetUInt64 sets s to i modulo the field order, and returns an error if one occurs.
-	SetUInt64(i uint64) Scalar
+	SetUInt64(uint64) Scalar
 
 	// UInt64 returns the uint64 representation of the scalar,
 	// or an error if its value is higher than the authorized limit for uint64.
@@ -68,11 +68,11 @@ type Scalar interface {
 	Encode() []byte
 
 	// Decode sets the receiver to a decoding of the input data, and returns an error on failure.
-	Decode(in []byte) error
+	Decode([]byte) error
 
 	// Hex returns the fixed-sized hexadecimal encoding of s.
 	Hex() string
 
 	// DecodeHex sets s to the decoding of the hex encoded scalar.
-	DecodeHex(h string) error
+	DecodeHex(string) error
 }
