@@ -10,12 +10,15 @@ package secp256k1
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 
 	"github.com/bytemare/secp256k1"
 
 	"github.com/bytemare/ecc/internal"
 )
+
+var errIdentityEncoding = errors.New("invalid secp256k1 encoding: invalid point encoding")
 
 // Element implements the Element interface for the Secp256k1 group element.
 type Element struct {
@@ -123,7 +126,14 @@ func (e *Element) Copy() internal.Element {
 
 // Encode returns the compressed byte encoding of the element.
 func (e *Element) Encode() []byte {
-	return e.element.Encode()
+	zero := make([]byte, 33)
+	enc := e.element.Encode()
+
+	if e.IsIdentity() {
+		return zero
+	}
+
+	return enc
 }
 
 // XCoordinate returns the encoded x coordinate of the element, which is the same as Encode().
@@ -133,6 +143,10 @@ func (e *Element) XCoordinate() []byte {
 
 // Decode sets the receiver to a decoding of the input data, and returns an error on failure.
 func (e *Element) Decode(data []byte) error {
+	if len(data) != 33 {
+		return errIdentityEncoding
+	}
+
 	if err := e.element.Decode(data); err != nil {
 		return fmt.Errorf("invalid secp256k1 encoding: %w", err)
 	}

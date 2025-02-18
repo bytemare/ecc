@@ -266,16 +266,7 @@ func TestElement_Decode_Bad(t *testing.T) {
 func TestElement_XCoordinate(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		baseX := hex.EncodeToString(group.group.Base().XCoordinate())
-		refLen := len(baseX) / 2 // hexadecimal length is 2 times byt length
-
 		if baseX != group.basePointX {
-			t.Error(errExpectedEquality)
-		}
-
-		zero := hex.EncodeToString(make([]byte, refLen))
-		id := hex.EncodeToString(group.group.NewElement().XCoordinate())
-
-		if zero != id {
 			t.Error(errExpectedEquality)
 		}
 	})

@@ -23,7 +23,6 @@ import (
 	"filippo.io/edwards25519/field"
 
 	"github.com/bytemare/ecc"
-	edwards255192 "github.com/bytemare/ecc/internal/edwards25519"
 )
 
 const hashToCurveVectorsFileLocation = "h2c"
@@ -80,7 +79,7 @@ func vectorToBig(x, y string) (*big.Int, *big.Int) {
 	return xb, yb
 }
 
-func affineToEdwards(t *testing.T, a string) *field.Element {
+func affineToEdwardsFromStrings(t *testing.T, a string) *field.Element {
 	aBytes, err := hex.DecodeString(a[2:])
 	if err != nil {
 		t.Fatal(err)
@@ -100,9 +99,20 @@ func affineToEdwards(t *testing.T, a string) *field.Element {
 	return u
 }
 
+func affineToEdwards(x, y *field.Element) *edwards25519.Point {
+	t := new(field.Element).Multiply(x, y)
+
+	p, err := new(edwards25519.Point).SetExtendedCoordinates(x, y, new(field.Element).One(), t)
+	if err != nil {
+		panic(err)
+	}
+
+	return p
+}
+
 func vectorToEdwards25519(t *testing.T, x, y string) *edwards25519.Point {
-	u, v := affineToEdwards(t, x), affineToEdwards(t, y)
-	return edwards255192.AffineToEdwards(u, v)
+	u, v := affineToEdwardsFromStrings(t, x), affineToEdwardsFromStrings(t, y)
+	return affineToEdwards(u, v)
 }
 
 func vectorToSecp256k1(x, y string) []byte {
@@ -131,6 +141,8 @@ func (v *h2cVector) run(t *testing.T) {
 		expected = hex.EncodeToString(p.Bytes())
 	case ecc.Secp256k1Sha256:
 		expected = hex.EncodeToString(vectorToSecp256k1(v.P.X, v.P.Y))
+	default:
+		t.Fatal("ciphersuite not recognized")
 	}
 
 	switch v.Ciphersuite[len(v.Ciphersuite)-3:] {

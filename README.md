@@ -7,7 +7,7 @@
   import "github.com/bytemare/ecc"
 ```
 
-This package exposes abstract operations over opaque (prime-order) elliptic curve groups and their scalars and elements,
+This package exposes abstract operations over opaque elliptic curve groups, some of which are prime-order, and their scalars and elements,
 and support hash-to-curve as per [RFC 9380](https://datatracker.ietf.org/doc/rfc9380).
 
 It makes using different elliptic curves easy, flexible, and without loosing performance or security. You don't have to
@@ -79,7 +79,7 @@ type Scalar interface {
 	UInt64() (uint64, error)
 	Copy() Scalar
 	Encode() []byte
-	Decode(in []byte) error
+	Decode([]byte) error
 	Hex() string
 	HexDecode([]byte) error
 	MarshalJSON()

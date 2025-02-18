@@ -58,7 +58,7 @@ func (s *Scalar) Group() byte {
 		return IdentifierP521
 	}
 
-	panic(fmt.Sprintf("invalid field order for scalar %s", s.field.Order().String()))
+	panic("invalid field order for scalar" + s.field.Order().String())
 }
 
 // Zero sets s to 0, and returns it.
@@ -174,7 +174,7 @@ func (s *Scalar) LessOrEqual(scalar internal.Scalar) int {
 
 	var res bool
 
-	for i := 0; i < leni; i++ {
+	for i := range leni {
 		res = res || (ienc[i] > jenc[i])
 	}
 
