@@ -68,16 +68,6 @@ func (g Group) Available() bool {
 	return 0 < g && g < maxID && g != decaf448Shake256
 }
 
-func (g Group) get() internal.Group {
-	if !g.Available() {
-		panic(internal.ErrInvalidGroup)
-	}
-
-	once[g-1].Do(g.init)
-
-	return groups[g-1]
-}
-
 // MakeDST builds a domain separation tag in the form of <app>-V<version>-CS<id>-<hash-to-curve-ID>,
 // and returns no error.
 func (g Group) MakeDST(app string, version uint8) []byte {
@@ -152,6 +142,16 @@ func (g Group) ElementLength() int {
 // Order returns the order of the canonical group of scalars.
 func (g Group) Order() []byte {
 	return g.get().Order()
+}
+
+func (g Group) get() internal.Group {
+	if !g.Available() {
+		panic(internal.ErrInvalidGroup)
+	}
+
+	once[g-1].Do(g.init)
+
+	return groups[g-1]
 }
 
 func (g Group) initGroup(get func() internal.Group) {

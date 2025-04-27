@@ -28,34 +28,34 @@ type Scalar interface {
 	Random() Scalar
 
 	// Add sets the receiver to the sum of the input and the receiver, and returns the receiver.
-	Add(Scalar) Scalar
+	Add(s Scalar) Scalar
 
 	// Subtract subtracts the input from the receiver, and returns the receiver.
-	Subtract(Scalar) Scalar
+	Subtract(s Scalar) Scalar
 
 	// Multiply multiplies the receiver with the input, and returns the receiver.
-	Multiply(Scalar) Scalar
+	Multiply(s Scalar) Scalar
 
 	// Pow sets s to s**scalar modulo the group order, and returns s. If scalar is nil, it returns 1.
-	Pow(Scalar) Scalar
+	Pow(s Scalar) Scalar
 
 	// Invert sets the receiver to the scalar's modular inverse ( 1 / scalar ), and returns it.
 	Invert() Scalar
 
 	// Equal returns 1 if the scalars are equal, and 0 otherwise.
-	Equal(Scalar) int
+	Equal(s Scalar) int
 
 	// LessOrEqual returns 1 if s <= scalar, and 0 otherwise.
-	LessOrEqual(Scalar) int
+	LessOrEqual(s Scalar) int
 
 	// IsZero returns whether the scalar is 0.
 	IsZero() bool
 
 	// Set sets the receiver to the value of the argument scalar, and returns the receiver.
-	Set(Scalar) Scalar
+	Set(s Scalar) Scalar
 
 	// SetUInt64 sets s to i modulo the field order, and returns an error if one occurs.
-	SetUInt64(uint64) Scalar
+	SetUInt64(i uint64) Scalar
 
 	// UInt64 returns the uint64 representation of the scalar,
 	// or an error if its value is higher than the authorized limit for uint64.
@@ -68,11 +68,11 @@ type Scalar interface {
 	Encode() []byte
 
 	// Decode sets the receiver to a decoding of the input data, and returns an error on failure.
-	Decode([]byte) error
+	Decode(data []byte) error
 
 	// Hex returns the fixed-sized hexadecimal encoding of s.
 	Hex() string
 
 	// DecodeHex sets s to the decoding of the hex encoded scalar.
-	DecodeHex(string) error
+	DecodeHex(data string) error
 }

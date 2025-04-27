@@ -21,7 +21,7 @@ type Element interface {
 	Identity() Element
 
 	// Add sets the receiver to the sum of the input and the receiver, and returns the receiver.
-	Add(Element) Element
+	Add(e Element) Element
 
 	// Double sets the receiver to its double, and returns it.
 	Double() Element
@@ -30,19 +30,19 @@ type Element interface {
 	Negate() Element
 
 	// Subtract subtracts the input from the receiver, and returns the receiver.
-	Subtract(Element) Element
+	Subtract(e Element) Element
 
 	// Multiply sets the receiver to the scalar multiplication of the receiver with the given Scalar, and returns it.
-	Multiply(Scalar) Element
+	Multiply(s Scalar) Element
 
 	// Equal returns 1 if the elements are equivalent, and 0 otherwise.
-	Equal(Element) int
+	Equal(e Element) int
 
 	// IsIdentity returns whether the Element is the point at infinity of the Group's underlying curve.
 	IsIdentity() bool
 
 	// Set sets the receiver to the value of the argument, and returns the receiver.
-	Set(Element) Element
+	Set(e Element) Element
 
 	// Copy returns a copy of the receiver.
 	Copy() Element
@@ -54,11 +54,11 @@ type Element interface {
 	XCoordinate() []byte
 
 	// Decode sets the receiver to a decoding of the input data, and returns an error on failure.
-	Decode([]byte) error
+	Decode(data []byte) error
 
 	// Hex returns the fixed-sized hexadecimal encoding of e.
 	Hex() string
 
 	// DecodeHex sets e to the decoding of the hex encoded element.
-	DecodeHex(string) error
+	DecodeHex(data string) error
 }

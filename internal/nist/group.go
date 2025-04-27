@@ -12,16 +12,16 @@ package nist
 
 import (
 	"crypto"
-	"math/big"
 	"sync"
 
 	"filippo.io/nistec"
-	nistP256 "github.com/bytemare/hash2curve/nist/p256"
-	nistP384 "github.com/bytemare/hash2curve/nist/p384"
-	nistP521 "github.com/bytemare/hash2curve/nist/p521"
 
 	"github.com/bytemare/ecc/internal"
 	"github.com/bytemare/ecc/internal/field"
+
+	nistP256 "github.com/bytemare/hash2curve/nist/p256"
+	nistP384 "github.com/bytemare/hash2curve/nist/p384"
+	nistP521 "github.com/bytemare/hash2curve/nist/p521"
 )
 
 const (
@@ -74,10 +74,10 @@ func P521() internal.Group {
 // Group represents the prime-order group over the P256 curve.
 // It exposes a prime-order group API with hash-to-curve operations.
 type Group[Point nistECPoint[Point]] struct {
+	NewPoint    func() Point
 	scalarField field.Field
 	mapping[Point]
 	h2c string
-	curve[Point]
 }
 
 // NewScalar returns a new scalar set to 0.
@@ -88,14 +88,14 @@ func (g Group[P]) NewScalar() internal.Scalar {
 // NewElement returns the identity element (point at infinity).
 func (g Group[P]) NewElement() internal.Element {
 	return &Element[P]{
-		p:   g.curve.NewPoint(),
-		new: g.curve.NewPoint,
+		p:   g.NewPoint(),
+		new: g.NewPoint,
 	}
 }
 
 // Base returns the group's base point a.k.a. canonical generator.
 func (g Group[P]) Base() internal.Element {
-	b := g.curve.NewPoint()
+	b := g.NewPoint()
 	b.SetGenerator()
 
 	return g.newPoint(b)
@@ -104,19 +104,19 @@ func (g Group[P]) Base() internal.Element {
 func (g Group[P]) newPoint(p P) *Element[P] {
 	return &Element[P]{
 		p:   p,
-		new: g.curve.NewPoint,
+		new: g.NewPoint,
 	}
 }
 
 // HashFunc returns the RFC9380 associated hash function of the group.
 func (g Group[P]) HashFunc() crypto.Hash {
-	return g.mapping.hash
+	return g.hash
 }
 
 // HashToScalar returns a safe mapping of the arbitrary input to a Scalar.
 // The DST must not be empty or nil, and is recommended to be longer than 16 bytes.
 func (g Group[P]) HashToScalar(input, dst []byte) internal.Scalar {
-	s := g.mapping.HashToScalar(input, dst)
+	s := g.hashToScalar(input, dst)
 
 	// If necessary, build a buffer of right size, so it gets correctly interpreted.
 	bytes := s.Bytes()
@@ -137,13 +137,13 @@ func (g Group[P]) HashToScalar(input, dst []byte) internal.Scalar {
 // HashToGroup returns a safe mapping of the arbitrary input to an Element in the Group.
 // The DST must not be empty or nil, and is recommended to be longer than 16 bytes.
 func (g Group[P]) HashToGroup(input, dst []byte) internal.Element {
-	return g.newPoint(g.mapping.HashToCurve(input, dst))
+	return g.newPoint(g.hashToCurve(input, dst))
 }
 
 // EncodeToGroup returns a non-uniform mapping of the arbitrary input to an Element in the Group.
 // The DST must not be empty or nil, and is recommended to be longer than 16 bytes.
 func (g Group[P]) EncodeToGroup(input, dst []byte) internal.Element {
-	return g.newPoint(g.mapping.MapToCurve(input, dst))
+	return g.newPoint(g.mapToCurve(input, dst))
 }
 
 // Ciphersuite returns the hash-to-curve ciphersuite identifier.
@@ -178,37 +178,27 @@ var (
 )
 
 func initP256() {
-	primeP256, _ := new(big.Int).SetString("115792089210356248762697446949407573530"+
-		"086143415290314195533631308867097853951", 10)
 	p256.h2c = H2CP256
-	p256.mapping.setMapping(
+	p256.NewPoint = nistec.NewP256Point
+
+	p256.setMapping(
 		crypto.SHA256,
 		nistP256.HashToScalar,
 		nistP256.HashToCurve,
 		nistP256.EncodeToCurve,
 	)
-	p256.curve.setCurveParams(
-		primeP256,
-		"0x5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b",
-		nistec.NewP256Point,
-	)
 	setScalarField(&p256, "0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551")
 }
 
 func initP384() {
-	primeP384, _ := new(big.Int).SetString("3940200619639447921227904010014361380507973927046544666794"+
-		"8293404245721771496870329047266088258938001861606973112319", 10)
 	p384.h2c = H2CP384
-	p384.mapping.setMapping(
+	p384.NewPoint = nistec.NewP384Point
+
+	p384.setMapping(
 		crypto.SHA384,
 		nistP384.HashToScalar,
 		nistP384.HashToCurve,
 		nistP384.EncodeToCurve,
-	)
-	p384.curve.setCurveParams(
-		primeP384,
-		"0xb3312fa7e23ee7e4988e056be3f82d19181d9c6efe8141120314088f5013875ac656398d8a2ed19d2a85c8edd3ec2aef",
-		nistec.NewP384Point,
 	)
 	setScalarField(&p384,
 		"0xffffffffffffffffffffffffffffffffffffffffffffffffc7634d81f4372ddf581a0db248b0a77aecec196accc52973",
@@ -216,21 +206,14 @@ func initP384() {
 }
 
 func initP521() {
-	primeP521, _ := new(big.Int).SetString("6864797660130609714981900799081393217269435300143305"+
-		"4093944634591855431833976560521225596406614545549772"+
-		"96311391480858037121987999716643812574028291115057151", 10)
 	p521.h2c = H2CP521
-	p521.mapping.setMapping(
+	p521.NewPoint = nistec.NewP521Point
+
+	p521.setMapping(
 		crypto.SHA512,
 		nistP521.HashToScalar,
 		nistP521.HashToCurve,
 		nistP521.EncodeToCurve,
-	)
-	p521.curve.setCurveParams(
-		primeP521,
-		"0x051953eb9618e1c9a1f929a21a0b68540eea2da725b99b315f3b8b489918ef10"+
-			"9e156193951ec7e937b1652c0bd3bb1bf073573df883d2c34f1ef451fd46b503f00",
-		nistec.NewP521Point,
 	)
 	setScalarField(&p521,
 		"0x1fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"+

@@ -27,33 +27,13 @@ const (
 )
 
 var (
-	a, invsqrtD, minA, zero, one, minOne, two *field.Element
-	fieldPrime, _                             = new(big.Int).SetString(p25519, 10)
+	one, minOne   *field.Element
+	fieldPrime, _ = new(big.Int).SetString(p25519, 10)
 )
 
 func init() {
-	var err error
-
-	a, err = fe().SetBytes([]byte{
-		6, 109, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	invsqrtD, err = fe().SetBytes([]byte{
-		6, 126, 69, 255, 170, 4, 110, 204, 130, 26, 125, 75, 209, 211, 161, 197,
-		126, 79, 252, 3, 220, 8, 123, 210, 187, 6, 160, 96, 244, 237, 38, 15,
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	minA = fe().Negate(a)
-	zero = fe().Zero()
 	one = fe().One()
 	minOne = fe().Negate(one)
-	two = fe().Add(one, one)
 }
 
 func fe() *field.Element {
@@ -136,10 +116,16 @@ func Elligator2Edwards(e *field.Element) *edwards25519.Point {
 
 // Elligator2Montgomery implements the Elligator2 mapping to Curve25519.
 func Elligator2Montgomery(e *field.Element) (x, y *field.Element) {
-	t1 := fe().Square(e)   // u^2
-	t1.Multiply(t1, two)   // t1 = 2u^2
-	e1 := t1.Equal(minOne) //
-	t1.Swap(zero, e1)      // if 2u^2 == -1, t1 = 0
+	a, _ := fe().SetBytes([]byte{ //nolint:errcheck // always succeeds
+		6, 109, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	})
+	minA := fe().Negate(a)
+	two := fe().Add(fe().One(), fe().One())
+
+	t1 := fe().Square(e)     // u^2
+	t1.Multiply(t1, two)     // t1 = 2u^2
+	e1 := t1.Equal(minOne)   //
+	t1.Swap(fe().Zero(), e1) // if 2u^2 == -1, t1 = 0
 
 	x1 := fe().Add(t1, one) // t1 + 1
 	x1.Invert(x1)           // 1 / (t1 + 1)
@@ -187,6 +173,11 @@ func AffineToEdwards(x, y *field.Element) *edwards25519.Point {
 
 // MontgomeryToEdwards lifts a Curve25519 point to its Edwards25519 equivalent.
 func MontgomeryToEdwards(u, v *field.Element) (x, y *field.Element) {
+	invsqrtD, _ := fe().SetBytes([]byte{ //nolint:errcheck // always succeeds
+		6, 126, 69, 255, 170, 4, 110, 204, 130, 26, 125, 75, 209, 211, 161, 197,
+		126, 79, 252, 3, 220, 8, 123, 210, 187, 6, 160, 96, 244, 237, 38, 15,
+	})
+
 	x = fe().Invert(v)
 	x.Multiply(x, u)
 	x.Multiply(x, invsqrtD)

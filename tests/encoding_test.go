@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/bytemare/ecc"
+
 	eccEncoding "github.com/bytemare/ecc/encoding"
 )
 

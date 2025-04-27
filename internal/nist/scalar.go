@@ -34,19 +34,6 @@ func newScalar(f *field.Field) *Scalar {
 	return s
 }
 
-func (s *Scalar) assert(scalar internal.Scalar) *Scalar {
-	_sc, ok := scalar.(*Scalar)
-	if !ok {
-		panic(internal.ErrCastScalar)
-	}
-
-	if !s.field.IsEqual(_sc.field) {
-		panic(internal.ErrWrongField)
-	}
-
-	return _sc
-}
-
 // Group returns the group's Identifier.
 func (s *Scalar) Group() byte {
 	switch *s.field {
@@ -56,9 +43,9 @@ func (s *Scalar) Group() byte {
 		return IdentifierP384
 	case p521.scalarField:
 		return IdentifierP521
+	default:
+		panic("invalid field order for scalar" + s.field.Order().String())
 	}
-
-	panic("invalid field order for scalar" + s.field.Order().String())
 }
 
 // Zero sets s to 0, and returns it.
@@ -279,4 +266,17 @@ func (s *Scalar) DecodeHex(h string) error {
 	}
 
 	return s.Decode(b)
+}
+
+func (s *Scalar) assert(scalar internal.Scalar) *Scalar {
+	_sc, ok := scalar.(*Scalar)
+	if !ok {
+		panic(internal.ErrCastScalar)
+	}
+
+	if !s.field.IsEqual(_sc.field) {
+		panic(internal.ErrWrongField)
+	}
+
+	return _sc
 }

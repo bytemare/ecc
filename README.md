@@ -1,5 +1,5 @@
 # Elliptic Curve Groups
-[![CI](https://github.com/bytemare/ecc/actions/workflows/code-scan.yml/badge.svg)](https://github.com/bytemare/ecc/actions/workflows/code-scan.yml)
+[![CI](https://github.com/bytemare/ecc/actions/workflows/wf-analysis.yaml/badge.svg)](https://github.com/bytemare/ecc/actions/workflows/wf-analysis.yaml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/bytemare/ecc.svg)](https://pkg.go.dev/github.com/bytemare/ecc)
 [![codecov](https://codecov.io/gh/bytemare/ecc/branch/main/graph/badge.svg?token=5bQfB0OctA)](https://codecov.io/gh/bytemare/ecc)
 

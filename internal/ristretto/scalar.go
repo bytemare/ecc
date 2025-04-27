@@ -63,10 +63,6 @@ func assert(scalar internal.Scalar) *Scalar {
 	return sc
 }
 
-func (s *Scalar) set(scalar *ristretto255.Scalar) {
-	s.scalar = *ristretto255.NewScalar().Add(&scZero.scalar, scalar)
-}
-
 // Group returns the group's Identifier.
 func (s *Scalar) Group() byte {
 	return Identifier
@@ -86,7 +82,7 @@ func (s *Scalar) One() internal.Scalar {
 
 // MinusOne sets the scalar to order-1, and returns it.
 func (s *Scalar) MinusOne() internal.Scalar {
-	_ = s.decodeScalar(scMinusOne)
+	_ = s.decodeScalar(scMinusOne) //nolint:errcheck // always succeeds
 	return s
 }
 
@@ -127,10 +123,6 @@ func (s *Scalar) Subtract(scalar internal.Scalar) internal.Scalar {
 	return s
 }
 
-func (s *Scalar) multiply(scalar *Scalar) {
-	s.scalar.Multiply(&s.scalar, &scalar.scalar)
-}
-
 // Multiply multiplies the receiver with the input, and returns the receiver.
 func (s *Scalar) Multiply(scalar internal.Scalar) internal.Scalar {
 	if scalar == nil {
@@ -164,10 +156,6 @@ func getMSByte(in []byte) int {
 	}
 
 	return msb
-}
-
-func (s *Scalar) square() {
-	s.scalar.Multiply(&s.scalar, &s.scalar)
 }
 
 // Pow sets s to s**scalar modulo the group order, and returns s. If scalar is nil, it returns 1.
@@ -308,10 +296,6 @@ func (s *Scalar) UInt64() (uint64, error) {
 	return binary.LittleEndian.Uint64(b[:8]), nil
 }
 
-func (s *Scalar) copy() *Scalar {
-	return &Scalar{*ristretto255.NewScalar().Add(ristretto255.NewScalar(), &s.scalar)}
-}
-
 // Copy returns a copy of the receiver.
 func (s *Scalar) Copy() internal.Scalar {
 	return s.copy()
@@ -320,22 +304,6 @@ func (s *Scalar) Copy() internal.Scalar {
 // Encode returns the compressed byte encoding of the scalar.
 func (s *Scalar) Encode() []byte {
 	return s.scalar.Encode(nil)
-}
-
-func (s *Scalar) decodeScalar(scalar []byte) error {
-	if len(scalar) == 0 {
-		return internal.ErrParamNilScalar
-	}
-
-	if len(scalar) != canonicalEncodingLength {
-		return internal.ErrParamScalarLength
-	}
-
-	if err := s.scalar.Decode(scalar); err != nil {
-		return fmt.Errorf("%w", err)
-	}
-
-	return nil
 }
 
 // Decode sets the receiver to a decoding of the input data, and returns an error on failure.
@@ -356,4 +324,36 @@ func (s *Scalar) DecodeHex(h string) error {
 	}
 
 	return s.Decode(b)
+}
+
+func (s *Scalar) set(scalar *ristretto255.Scalar) {
+	s.scalar = *ristretto255.NewScalar().Add(&scZero.scalar, scalar)
+}
+
+func (s *Scalar) multiply(scalar *Scalar) {
+	s.scalar.Multiply(&s.scalar, &scalar.scalar)
+}
+
+func (s *Scalar) square() {
+	s.scalar.Multiply(&s.scalar, &s.scalar)
+}
+
+func (s *Scalar) copy() *Scalar {
+	return &Scalar{*ristretto255.NewScalar().Add(ristretto255.NewScalar(), &s.scalar)}
+}
+
+func (s *Scalar) decodeScalar(scalar []byte) error {
+	if len(scalar) == 0 {
+		return internal.ErrParamNilScalar
+	}
+
+	if len(scalar) != canonicalEncodingLength {
+		return internal.ErrParamScalarLength
+	}
+
+	if err := s.scalar.Decode(scalar); err != nil {
+		return fmt.Errorf("%w", err)
+	}
+
+	return nil
 }

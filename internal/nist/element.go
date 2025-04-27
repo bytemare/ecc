@@ -197,9 +197,9 @@ func (e *Element[P]) Encode() []byte {
 }
 
 func encodeInfinity[Point nistECPoint[Point]](element *Element[Point]) []byte {
-	_, err := element.p.BytesX()
 	var encodedLength int
 
+	_, err := element.p.BytesX()
 	switch err.Error()[:4] {
 	case "P256":
 		encodedLength = p256CompressedEncodingLength

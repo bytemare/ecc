@@ -13,9 +13,9 @@ import (
 	"crypto"
 	"slices"
 
-	ed "filippo.io/edwards25519"
-
 	"github.com/bytemare/ecc/internal"
+
+	ed "filippo.io/edwards25519"
 )
 
 const (

@@ -106,11 +106,6 @@ func (e *Element) IsIdentity() bool {
 	return e.element.Equal(id) == 1
 }
 
-func (e *Element) set(element *Element) *Element {
-	*e = *element
-	return e
-}
-
 // Set sets the receiver to the value of the argument, and returns the receiver.
 func (e *Element) Set(element internal.Element) internal.Element {
 	if element == nil {
@@ -122,7 +117,9 @@ func (e *Element) Set(element internal.Element) internal.Element {
 		panic(internal.ErrCastElement)
 	}
 
-	return e.set(ec)
+	*e = *ec
+
+	return e
 }
 
 // Copy returns a copy of the receiver.

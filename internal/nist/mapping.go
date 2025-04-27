@@ -11,21 +11,13 @@ package nist
 import (
 	"crypto"
 	"math/big"
-
-	"github.com/bytemare/ecc/internal/field"
 )
 
 type mapping[point nistECPoint[point]] struct {
-	HashToScalar hashToScalar[point]
-	HashToCurve  hashToCurve[point]
-	MapToCurve   mapToCurve[point]
+	hashToScalar hashToScalar[point]
+	hashToCurve  hashToCurve[point]
+	mapToCurve   mapToCurve[point]
 	hash         crypto.Hash
-}
-
-type curve[point nistECPoint[point]] struct {
-	NewPoint func() point
-	field    field.Field
-	b        big.Int
 }
 
 type (
@@ -41,13 +33,7 @@ func (m *mapping[point]) setMapping(
 	m2c mapToCurve[point],
 ) {
 	m.hash = hash
-	m.HashToScalar = h2s
-	m.HashToCurve = h2c
-	m.MapToCurve = m2c
-}
-
-func (c *curve[point]) setCurveParams(prime *big.Int, b string, newPoint func() point) {
-	c.field = field.NewField(prime)
-	c.b = field.String2Int(b)
-	c.NewPoint = newPoint
+	m.hashToScalar = h2s
+	m.hashToCurve = h2c
+	m.mapToCurve = m2c
 }

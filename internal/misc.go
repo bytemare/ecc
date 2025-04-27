@@ -9,10 +9,11 @@
 package internal
 
 import (
-	cryptorand "crypto/rand"
 	"encoding"
 	"errors"
 	"fmt"
+
+	cryptorand "crypto/rand"
 )
 
 var (

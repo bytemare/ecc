@@ -22,7 +22,7 @@ fmt:
 	@go fmt ../...
 	@golines -m 120 -t 4 -w ../
 	@gofumpt -w -extra ../
-	@gci write -s Standard -s Default -s "Prefix($(shell go list -m))" ../
+	@gci write -s standard -s default -s "Prefix($(shell go list -m))" -s blank -s dot -s alias --skip-generated ../
 	@fieldalignment -fix ../...
 
 .PHONY: license
@@ -33,6 +33,7 @@ license:
 .PHONY: lint
 lint: fmt license
 	@echo "Linting ..."
+	@if golangci-lint config verify -v --config=.golangci.yml; then echo "Config OK"; else return 1; fi;
 	@if golangci-lint run --config=.golangci.yml ../...; then echo "Linting OK"; else return 1; fi;
 
 .PHONY: test
