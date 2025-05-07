@@ -337,6 +337,24 @@ func TestElement_Vectors_Mult(t *testing.T) {
 	})
 }
 
+func TestElement_Arithmetic2(t *testing.T) {
+	// Test sA + (-s)A = 0
+	info := []byte("info")
+	dst := []byte("dst")
+
+	testAllGroups(t, func(group *testGroup) {
+		s := group.group.HashToScalar(info, dst)
+		negative := group.group.NewScalar().Subtract(s) // negate s, so to yield an 0 when adding
+		pk := group.group.Base().Multiply(negative)
+
+		res := group.group.Base().Multiply(s).Add(pk)
+
+		if !res.IsIdentity() {
+			t.Errorf("expected identity element, got:\n\t%v", res.Hex())
+		}
+	})
+}
+
 func TestElement_Arithmetic(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		elementTestEqual(t, group.group)
