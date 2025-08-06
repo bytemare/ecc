@@ -7,7 +7,7 @@ require (
 	filippo.io/nistec v0.0.3
 	github.com/bytemare/hash2curve v0.5.4
 	github.com/bytemare/secp256k1 v0.3.0
-	github.com/gtank/ristretto255 v0.1.2
+	github.com/gtank/ristretto255 v0.2.0
 )
 
 require (
