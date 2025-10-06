@@ -10,13 +10,15 @@ package ecc_test
 
 import (
 	"encoding/hex"
-	"errors"
 	"log"
 	"testing"
 
 	"github.com/bytemare/ecc"
-	"github.com/bytemare/ecc/debug"
 	"github.com/bytemare/ecc/internal"
+	"github.com/bytemare/ecc/internal/edwards25519"
+	"github.com/bytemare/ecc/internal/nist"
+	"github.com/bytemare/ecc/internal/ristretto"
+	"github.com/bytemare/ecc/internal/secp256k1"
 )
 
 const (
@@ -113,32 +115,22 @@ func TestElement_WrongInput(t *testing.T) {
 			t.Fatalf("Invalid group id %d", group.group)
 		}
 
-		if err := testPanic(errWrongGroup, internal.ErrCastElement,
-			exec(element.Add, alternativeGroup.NewElement())); err != nil {
-			t.Fatal(err)
-		}
+		expectPanic(t, errWrongGroup, internal.ErrWrongGroup,
+			exec(element.Add, alternativeGroup.NewElement()))
 
-		if err := testPanic(errWrongGroup, internal.ErrCastElement,
-			exec(element.Subtract, alternativeGroup.NewElement())); err != nil {
-			t.Fatal(err)
-		}
+		expectPanic(t, errWrongGroup, internal.ErrWrongGroup,
+			exec(element.Subtract, alternativeGroup.NewElement()))
 
-		if err := testPanic(errWrongGroup, internal.ErrCastElement,
-			exec(element.Set, alternativeGroup.NewElement())); err != nil {
-			t.Fatal(err)
-		}
+		expectPanic(t, errWrongGroup, internal.ErrWrongGroup,
+			exec(element.Set, alternativeGroup.NewElement()))
 
-		if err := testPanic(errWrongGroup, internal.ErrCastElement,
-			equal(element.Equal, alternativeGroup.NewElement())); err != nil {
-			t.Fatal(err)
-		}
+		expectPanic(t, errWrongGroup, internal.ErrWrongGroup,
+			equal(element.Equal, alternativeGroup.NewElement()))
 	})
 
 	// Specifically test Ristretto
-	if err := testPanic(errWrongGroup, internal.ErrCastScalar,
-		mult(ecc.Ristretto255Sha512.NewElement().Multiply, ecc.P384Sha384.NewScalar())); err != nil {
-		t.Fatal(err)
-	}
+	expectPanic(t, errWrongGroup, internal.ErrWrongGroup,
+		mult(ecc.Ristretto255Sha512.NewElement().Multiply, ecc.P384Sha384.NewScalar()))
 }
 
 func TestElement_EncodedLength(t *testing.T) {
@@ -174,24 +166,21 @@ func TestElement_EncodedLength(t *testing.T) {
 
 func TestElement_Decode_Identity(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
-		decodeErr := "element Decode: "
-		errMessage := ""
+		var expected error
 		switch group.group {
 		case ecc.Ristretto255Sha512:
-			errMessage = "invalid Ristretto encoding: infinity/identity point"
+			expected = ristretto.ErrDecodeElement
 		case ecc.P256Sha256:
-			errMessage = "invalid P256 point encoding"
+			expected = nist.ErrDecodeElementP256
 		case ecc.P384Sha384:
-			errMessage = "invalid P384 point encoding"
+			expected = nist.ErrDecodeElementP384
 		case ecc.P521Sha512:
-			errMessage = "invalid P521 point encoding"
+			expected = nist.ErrDecodeElementP521
 		case ecc.Edwards25519Sha512:
-			errMessage = "invalid edwards25519 encoding: infinity/identity point"
+			expected = edwards25519.ErrDecodeElement
 		case ecc.Secp256k1Sha256:
-			errMessage = "invalid secp256k1 encoding: invalid point encoding"
+			expected = secp256k1.ErrDecodeElement
 		}
-
-		decodeErr += errMessage
 
 		id := group.group.NewElement().Identity()
 
@@ -199,67 +188,9 @@ func TestElement_Decode_Identity(t *testing.T) {
 			t.Fatal(errExpectedIdentity)
 		}
 
-		expected := errors.New(decodeErr)
-		if err := group.group.NewElement().Decode(id.Encode()); err == nil || err.Error() != expected.Error() {
-			t.Errorf("expected error %q, got %v\n", expected, err)
-		}
-	})
-}
-
-func TestElement_Decode_Bad(t *testing.T) {
-	testAllGroups(t, func(group *testGroup) {
-		decodePrefix := "element Decode: "
-		unmarshallBinaryPrefix := "element UnmarshalBinary: "
-		errMessage := ""
-		switch group.group {
-		case ecc.Ristretto255Sha512:
-			errMessage = "invalid Ristretto encoding"
-		case ecc.P256Sha256:
-			errMessage = "invalid P256 element encoding"
-		case ecc.P384Sha384:
-			errMessage = "invalid P384Element encoding"
-		case ecc.P521Sha512:
-			errMessage = "invalid P521Element encoding"
-		case ecc.Edwards25519Sha512:
-			errMessage = "edwards25519: invalid point encoding"
-		case ecc.Secp256k1Sha256:
-			errMessage = "invalid secp256k1 encoding: invalid point encoding"
-		}
-
-		// off curve
-		bad := debug.BadElementOffCurve(group.group)
-
-		expected := errors.New(decodePrefix + errMessage)
-		if err := group.group.NewElement().Decode(bad); err == nil || err.Error() != expected.Error() {
-			t.Errorf("expected error %q, got %v\n", expected, err)
-		}
-
-		expected = errors.New(unmarshallBinaryPrefix + errMessage)
-		if err := group.group.NewElement().UnmarshalBinary(bad); err == nil || err.Error() != expected.Error() {
-			t.Errorf("expected error %q, got %v", expected, err)
-		}
-
-		// bad encoding, e.g. sign
-		switch group.group {
-		case ecc.P256Sha256:
-			errMessage = "invalid P256 point encoding"
-		case ecc.P384Sha384:
-			errMessage = "invalid P384 point encoding"
-		case ecc.P521Sha512:
-			errMessage = "invalid P521 point encoding"
-		}
-
-		bad = debug.BadElementEncoding(group.group)
-
-		expected = errors.New(decodePrefix + errMessage)
-		if err := group.group.NewElement().Decode(bad); err == nil || err.Error() != expected.Error() {
-			t.Errorf("expected error %q, got %v\n", expected, err)
-		}
-
-		expected = errors.New(unmarshallBinaryPrefix + errMessage)
-		if err := group.group.NewElement().UnmarshalBinary(bad); err == nil || err.Error() != expected.Error() {
-			t.Errorf("expected error %q, got %v", expected, err)
-		}
+		expectErrors(t, func() error {
+			return group.group.NewElement().Decode(id.Encode())
+		}, ecc.ErrDecodeElement, expected)
 	})
 }
 
@@ -268,6 +199,20 @@ func TestElement_XCoordinate(t *testing.T) {
 		baseX := hex.EncodeToString(group.group.Base().XCoordinate())
 		if baseX != group.basePointX {
 			t.Error(errExpectedEquality)
+		}
+	})
+}
+
+func TestElement_XCoordinate_Identity(t *testing.T) {
+	testAllGroups(t, func(group *testGroup) {
+		id := group.group.NewElement().Identity()
+		x := id.XCoordinate()
+
+		encodedX := hex.EncodeToString(x)
+		for _, i := range encodedX {
+			if i != '0' {
+				t.Fatalf("expected all zero bytes for XCoordinate of identity element, got: %s", encodedX)
+			}
 		}
 	})
 }
@@ -337,22 +282,59 @@ func TestElement_Vectors_Mult(t *testing.T) {
 	})
 }
 
-func TestElement_Arithmetic2(t *testing.T) {
-	// Test sA + (-s)A = 0
-	info := []byte("info")
-	dst := []byte("dst")
+func TestElement_Internal_NilOperations(t *testing.T) {
+	var (
+		nilScalar  internal.Scalar
+		nilElement internal.Element
+	)
 
-	testAllGroups(t, func(group *testGroup) {
-		s := group.group.HashToScalar(info, dst)
-		negative := group.group.NewScalar().Subtract(s) // negate s, so to yield an 0 when adding
-		pk := group.group.Base().Multiply(negative)
+	cases := []struct {
+		element internal.Element
+		name    string
+	}{
+		{element: edwards25519.New().NewElement(), name: "Edwards"},
+		{element: ristretto.New().NewElement(), name: "Ristretto"},
+		{element: secp256k1.New().NewElement(), name: "Secp256k1"},
+		{element: nist.P256().NewElement(), name: "NistP256"},
+		{element: nist.P384().NewElement(), name: "NistP384"},
+		{element: nist.P521().NewElement(), name: "NistP521"},
+	}
 
-		res := group.group.Base().Multiply(s).Add(pk)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			e := tc.element
 
-		if !res.IsIdentity() {
-			t.Errorf("expected identity element, got:\n\t%v", res.Hex())
-		}
-	})
+			e.Identity()
+			expectPanic(t, "Add should panic when element is nil", internal.ErrParamNilPoint, func() {
+				e.Add(nilElement)
+			})
+
+			e.Identity()
+			expectPanic(t, "Subtract should panic when element is nil", internal.ErrParamNilPoint, func() {
+				e.Add(nilElement)
+			})
+
+			e.Identity()
+			expectPanic(t, "Equal should panic when compared to nil", internal.ErrParamNilPoint, func() {
+				e.Add(nilElement)
+			})
+
+			e.Identity()
+			e.Multiply(nilScalar)
+
+			if !e.IsIdentity() {
+				t.Fatal("Multiply with nil scalar should zero the receiver")
+			}
+
+			e.Identity()
+			e.Set(nilElement)
+
+			if !e.IsIdentity() {
+				t.Fatal("Set with nil element should zero the receiver")
+			}
+		})
+	}
 }
 
 func TestElement_Arithmetic(t *testing.T) {
@@ -364,6 +346,7 @@ func TestElement_Arithmetic(t *testing.T) {
 		elementTestSubstract(t, group.group)
 		elementTestMultiply(t, group.group)
 		elementTestIdentity(t, group.group)
+		elementTestGroupOps(t, group.group)
 	})
 }
 
@@ -563,5 +546,27 @@ func elementTestIdentity(t *testing.T, g ecc.Group) {
 	base.Add(neg)
 	if !id.Equal(base) {
 		t.Fatal(errExpectedIdentity)
+	}
+}
+
+func elementTestGroupOps(t *testing.T, g ecc.Group) {
+	// Test sA + (-s)A = 0
+	info := []byte("info")
+	dst := []byte("dst")
+
+	s, err := g.HashToScalar(info, dst)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	pk := g.Base().Multiply(s)
+
+	negative := g.NewScalar().Subtract(s) // negate s, so to yield b(-s) + (s)b = (0)b = 0
+	negPk := g.Base().Multiply(negative)
+
+	res := pk.Add(negPk)
+
+	if !res.IsIdentity() {
+		t.Errorf("expected identity element, got:\n\t%v", res.Hex())
 	}
 }

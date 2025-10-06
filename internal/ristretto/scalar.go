@@ -13,6 +13,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"reflect"
 
 	"github.com/gtank/ristretto255"
 
@@ -57,7 +58,7 @@ type Scalar struct {
 func assert(scalar internal.Scalar) *Scalar {
 	sc, ok := scalar.(*Scalar)
 	if !ok {
-		panic(internal.ErrCastScalar)
+		panic(internal.WrongGroupError(reflect.TypeFor[*Scalar](), reflect.TypeOf(scalar)))
 	}
 
 	return sc
@@ -91,7 +92,9 @@ func (s *Scalar) MinusOne() internal.Scalar {
 func (s *Scalar) Random() internal.Scalar {
 	for {
 		random := internal.RandomBytes(inputLength)
-		s.scalar.FromUniformBytes(random)
+		if _, err := s.scalar.SetUniformBytes(random); err != nil {
+			panic(err)
+		}
 
 		if !s.IsZero() {
 			return s
@@ -282,7 +285,7 @@ func (s *Scalar) SetUInt64(i uint64) internal.Scalar {
 // UInt64 returns the uint64 representation of the scalar,
 // or an error if its value is higher than the authorized limit for uint64.
 func (s *Scalar) UInt64() (uint64, error) {
-	b := s.scalar.Encode(nil)
+	b := s.scalar.Bytes()
 	overflows := byte(0)
 
 	for _, bx := range b[8:] {
@@ -303,7 +306,7 @@ func (s *Scalar) Copy() internal.Scalar {
 
 // Encode returns the compressed byte encoding of the scalar.
 func (s *Scalar) Encode() []byte {
-	return s.scalar.Encode(nil)
+	return s.scalar.Bytes()
 }
 
 // Decode sets the receiver to a decoding of the input data, and returns an error on failure.
@@ -351,7 +354,7 @@ func (s *Scalar) decodeScalar(scalar []byte) error {
 		return internal.ErrParamScalarLength
 	}
 
-	if err := s.scalar.Decode(scalar); err != nil {
+	if _, err := s.scalar.SetCanonicalBytes(scalar); err != nil {
 		return fmt.Errorf("%w", err)
 	}
 

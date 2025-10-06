@@ -147,12 +147,20 @@ func (v *h2cVector) run(t *testing.T) {
 
 	switch v.Ciphersuite[len(v.Ciphersuite)-3:] {
 	case "RO_":
-		p := v.group.HashToGroup([]byte(v.Msg), []byte(v.Dst))
+		p, err := v.group.HashToGroup([]byte(v.Msg), []byte(v.Dst))
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		if err := verifyEncoding(p, "HashToGroup", expected); err != nil {
 			t.Fatal(err)
 		}
 	case "NU_":
-		p := v.group.EncodeToGroup([]byte(v.Msg), []byte(v.Dst))
+		p, err := v.group.EncodeToGroup([]byte(v.Msg), []byte(v.Dst))
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		if err := verifyEncoding(p, "EncodeToGroup", expected); err != nil {
 			t.Fatal(err)
 		}
@@ -199,6 +207,7 @@ func TestHashToGroupVectors(t *testing.T) {
 			if info.IsDir() {
 				return nil
 			}
+
 			file, errOpen := os.Open(path)
 			if errOpen != nil {
 				t.Fatal(errOpen)

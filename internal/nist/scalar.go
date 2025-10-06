@@ -14,6 +14,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"reflect"
 
 	"github.com/bytemare/ecc/internal"
 	"github.com/bytemare/ecc/internal/field"
@@ -44,6 +45,7 @@ func (s *Scalar) Group() byte {
 	case p521.scalarField:
 		return IdentifierP521
 	default:
+		// Indicates the scalar was initialised with an unexpected field instance.
 		panic("invalid field order for scalar" + s.field.Order().String())
 	}
 }
@@ -269,14 +271,14 @@ func (s *Scalar) DecodeHex(h string) error {
 }
 
 func (s *Scalar) assert(scalar internal.Scalar) *Scalar {
-	_sc, ok := scalar.(*Scalar)
+	sc, ok := scalar.(*Scalar)
 	if !ok {
-		panic(internal.ErrCastScalar)
+		panic(internal.WrongGroupError(reflect.TypeFor[*Scalar](), reflect.TypeOf(scalar)))
 	}
 
-	if !s.field.IsEqual(_sc.field) {
+	if !s.field.IsEqual(sc.field) {
 		panic(internal.ErrWrongField)
 	}
 
-	return _sc
+	return sc
 }

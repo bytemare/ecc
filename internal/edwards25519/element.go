@@ -10,12 +10,16 @@ package edwards25519
 
 import (
 	"encoding/hex"
-	"fmt"
+	"errors"
+	"reflect"
 
 	"github.com/bytemare/ecc/internal"
 
 	ed "filippo.io/edwards25519"
 )
+
+// ErrDecodeElement is returned when decoding an invalid byte slice.
+var ErrDecodeElement = errors.New("invalid edwards25519 element encoding")
 
 // Element implements the Element interface for the Edwards25519 group element.
 type Element struct {
@@ -29,7 +33,7 @@ func checkElement(element internal.Element) *Element {
 
 	ec, ok := element.(*Element)
 	if !ok {
-		panic(internal.ErrCastElement)
+		panic(internal.WrongGroupError(reflect.TypeFor[*Element](), reflect.TypeOf(element)))
 	}
 
 	return ec
@@ -112,7 +116,7 @@ func (e *Element) Set(element internal.Element) internal.Element {
 
 	ec, ok := element.(*Element)
 	if !ok {
-		panic(internal.ErrCastElement)
+		panic(internal.WrongGroupError(reflect.TypeFor[*Element](), reflect.TypeOf(element)))
 	}
 
 	*e = *ec
@@ -136,32 +140,23 @@ func (e *Element) XCoordinate() []byte {
 	return e.element.BytesMontgomery()
 }
 
-func decodeElement(element []byte) (*ed.Point, error) {
-	if len(element) == 0 {
-		return nil, internal.ErrParamInvalidPointEncoding
-	}
-
-	e := ed.NewIdentityPoint()
-	if _, err := e.SetBytes(element); err != nil {
-		return nil, fmt.Errorf("%w", err)
-	}
-
-	return e, nil
-}
-
 // Decode sets the receiver to a decoding of the input data, and returns an error on failure.
 func (e *Element) Decode(data []byte) error {
-	element, err := decodeElement(data)
+	if len(data) == 0 {
+		return ErrDecodeElement
+	}
+
+	res, err := ed.NewIdentityPoint().SetBytes(data)
 	if err != nil {
-		return err
+		return ErrDecodeElement
 	}
 
-	// superfluous identity check
-	if element.Equal(ed.NewIdentityPoint()) == 1 {
-		return fmt.Errorf("invalid edwards25519 encoding: %w", internal.ErrIdentity)
+	// superfluous identity check // todo: check if it's covered
+	if res.Equal(ed.NewIdentityPoint()) == 1 {
+		return errors.Join(ErrDecodeElement, internal.ErrIdentity)
 	}
 
-	e.element = *element
+	e.element = *res
 
 	return nil
 }
@@ -175,7 +170,7 @@ func (e *Element) Hex() string {
 func (e *Element) DecodeHex(h string) error {
 	b, err := hex.DecodeString(h)
 	if err != nil {
-		return fmt.Errorf("%w", err)
+		return errors.Join(ErrDecodeElement, err)
 	}
 
 	return e.Decode(b)

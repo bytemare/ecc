@@ -11,6 +11,7 @@ package nist
 import (
 	"crypto/subtle"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -23,6 +24,17 @@ const (
 	p256CompressedEncodingLength = 33
 	p384CompressedEncodingLength = 49
 	p521CompressedEncodingLength = 67
+)
+
+var (
+	// ErrDecodeElementP256 is returned when input data could not be decoded to a P256 element.
+	ErrDecodeElementP256 = errors.New("invalid P256 element encoding")
+
+	// ErrDecodeElementP384 is returned when input data could not be decoded to a P384 element.
+	ErrDecodeElementP384 = errors.New("invalid P384 element encoding")
+
+	// ErrDecodeElementP521 is returned when input data could not be decoded to a P521 element.
+	ErrDecodeElementP521 = errors.New("invalid P521 element encoding")
 )
 
 // Element implements the Element interface for group elements over NIST curves.
@@ -38,7 +50,7 @@ func checkElement[Point nistECPoint[Point]](element internal.Element) *Element[P
 
 	ec, ok := element.(*Element[Point])
 	if !ok {
-		panic(internal.ErrCastElement)
+		panic(internal.WrongGroupError(reflect.TypeFor[*Element[Point]](), reflect.TypeOf(element)))
 	}
 
 	return ec
@@ -55,6 +67,7 @@ func (e *Element[Point]) Group() byte {
 		return IdentifierP521
 	}
 
+	// This panic can only trigger if the element wraps an unexpected point type.
 	panic(fmt.Sprintf("invalid point type %v", reflect.TypeFor[Point]()))
 }
 
@@ -98,6 +111,7 @@ func (e *Element[Point]) negateSmall() []byte {
 	case 3:
 		enc[0] = 0x02
 	default:
+		// Compressed encodings should always start with 0x02 or 0x03 per SEC1.
 		panic("invalid encoding header")
 	}
 
@@ -108,6 +122,7 @@ func (e *Element[Point]) negateSmall() []byte {
 func (e *Element[P]) Negate() internal.Element {
 	_, err := e.p.SetBytes(e.negateSmall())
 	if err != nil {
+		// Indicates an upstream failure in filippo.io/nistec.
 		panic(err)
 	}
 
@@ -120,6 +135,7 @@ func (e *Element[P]) Subtract(element internal.Element) internal.Element {
 
 	p, err := e.new().SetBytes(ec)
 	if err != nil {
+		// Indicates an upstream failure in filippo.io/nistec.
 		panic(err)
 	}
 
@@ -135,12 +151,19 @@ func (e *Element[P]) isGenerator() bool {
 
 // Multiply sets the receiver to the scalar multiplication of the receiver with the given Scalar, and returns it.
 func (e *Element[P]) Multiply(scalar internal.Scalar) internal.Element {
+	if scalar == nil {
+		e.Identity()
+		return e
+	}
+
 	if e.isGenerator() {
 		if _, err := e.p.ScalarBaseMult(scalar.Encode()); err != nil {
+			// Forward unexpected errors from the curve implementation.
 			panic(err)
 		}
 	} else {
 		if _, err := e.p.ScalarMult(e.p, scalar.Encode()); err != nil {
+			// Forward unexpected errors from the curve implementation.
 			panic(err)
 		}
 	}
@@ -171,7 +194,7 @@ func (e *Element[P]) Set(element internal.Element) internal.Element {
 
 	ec, ok := element.(*Element[P])
 	if !ok {
-		panic(internal.ErrCastElement)
+		panic(internal.WrongGroupError(reflect.TypeFor[*Element[P]](), reflect.TypeOf(element)))
 	}
 
 	e.p.Set(ec.p)
@@ -229,10 +252,23 @@ func (e *Element[P]) XCoordinate() []byte {
 	return b
 }
 
+func (e *Element[P]) decodeError() error {
+	switch e.Group() {
+	case IdentifierP256:
+		return ErrDecodeElementP256
+	case IdentifierP384:
+		return ErrDecodeElementP384
+	case IdentifierP521:
+		return ErrDecodeElementP521
+	default:
+		panic("invalid group")
+	}
+}
+
 // Decode sets the receiver to a decoding of the input data, and returns an error on failure.
 func (e *Element[P]) Decode(data []byte) error {
 	if _, err := e.p.SetBytes(data); err != nil {
-		return fmt.Errorf("%w", err)
+		return e.decodeError()
 	}
 
 	return nil
@@ -247,7 +283,7 @@ func (e *Element[P]) Hex() string {
 func (e *Element[P]) DecodeHex(h string) error {
 	b, err := hex.DecodeString(h)
 	if err != nil {
-		return fmt.Errorf("%w", err)
+		return errors.Join(e.decodeError(), err)
 	}
 
 	return e.Decode(b)

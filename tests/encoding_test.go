@@ -19,8 +19,11 @@ import (
 	"testing"
 
 	"github.com/bytemare/ecc"
-
-	eccEncoding "github.com/bytemare/ecc/encoding"
+	"github.com/bytemare/ecc/debug"
+	"github.com/bytemare/ecc/internal/edwards25519"
+	"github.com/bytemare/ecc/internal/nist"
+	"github.com/bytemare/ecc/internal/ristretto"
+	"github.com/bytemare/ecc/internal/secp256k1"
 )
 
 type serde interface {
@@ -161,13 +164,27 @@ func testElementEncodings(g ecc.Group, f makeEncodeTest) error {
 	return nil
 }
 
+func testDecodeBad(t *testing.T, group ecc.Group, s serde, bad []byte, expectedErrors ...error) {
+	expectErrors(t, func() error { return s.Decode(bad) }, expectedErrors...)
+	expectErrors(t, func() error { return s.UnmarshalBinary(bad) }, expectedErrors...)
+	expectErrors(t, func() error { return s.DecodeHex(hex.EncodeToString(bad)) }, expectedErrors...)
+
+	fakeJson := jsonSerDe{Group: group, Data: string(bad)}
+	badJson, err := json.Marshal(fakeJson)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectErrors(t, func() error { return s.UnmarshalJSON(badJson) }, expectedErrors...)
+}
+
 func TestScalar_Encoding(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		g := group.group
 		testDecodeEmpty(t, group.group.NewScalar().Random())
 		for _, tester := range encodeTesters {
 			if err := testScalarEncodings(g, tester); err != nil {
-				t.Fatal()
+				t.Fatal(err)
 			}
 		}
 	})
@@ -179,43 +196,63 @@ func TestElement_Encoding(t *testing.T) {
 		testDecodeEmpty(t, group.group.Base())
 		for _, tester := range encodeTesters {
 			if err := testElementEncodings(g, tester); err != nil {
-				t.Fatal()
+				t.Fatal(err)
 			}
 		}
 	})
 }
 
-func testDecodeEmpty(t *testing.T, s serde) {
-	if err := s.Decode(nil); err == nil {
-		t.Fatal("expected error on Decode() with nil input")
-	}
+func TestScalar_Decoding_Fails(t *testing.T) {
+	testAllGroups(t, func(group *testGroup) {
+		g := group.group
 
-	if err := s.Decode([]byte{}); err == nil {
-		t.Fatal("expected error on Decode() with empty input")
-	}
+		// Invalid length
+		bad := []byte{0, 1}
+		testDecodeBad(t, g, g.NewScalar(), bad, ecc.ErrDecodeScalar)
 
-	if err := s.(encoding.BinaryUnmarshaler).UnmarshalBinary(nil); err == nil {
-		t.Fatal("expected error on UnmarshalBinary() with nil input")
-	}
-
-	if err := s.(encoding.BinaryUnmarshaler).UnmarshalBinary([]byte{}); err == nil {
-		t.Fatal("expected error on UnmarshalBinary() with empty input")
-	}
-
-	if err := s.DecodeHex(""); err == nil {
-		t.Fatal("expected error on empty string")
-	}
-
-	if err := json.Unmarshal(nil, s); err == nil {
-		t.Fatal("expected error")
-	}
-
-	if err := json.Unmarshal([]byte{}, s); err == nil {
-		t.Fatal("expected error")
-	}
+		// Decode a scalar higher than order
+		bad = debug.BadScalarHigh(group.group)
+		testDecodeBad(t, g, g.NewScalar(), bad, ecc.ErrDecodeScalar)
+	})
 }
 
-func testDecodingHexFails(t *testing.T, thing1, thing2 serde) {
+func TestElement_Decoding_Fails(t *testing.T) {
+	testAllGroups(t, func(group *testGroup) {
+		g := group.group
+
+		var errMessage error
+		switch group.group {
+		case ecc.Ristretto255Sha512:
+			errMessage = ristretto.ErrDecodeElement
+		case ecc.P256Sha256:
+			errMessage = nist.ErrDecodeElementP256
+		case ecc.P384Sha384:
+			errMessage = nist.ErrDecodeElementP384
+		case ecc.P521Sha512:
+			errMessage = nist.ErrDecodeElementP521
+		case ecc.Edwards25519Sha512:
+			errMessage = edwards25519.ErrDecodeElement
+		case ecc.Secp256k1Sha256:
+			errMessage = secp256k1.ErrDecodeElement
+		}
+
+		// off curve
+		bad := debug.BadElementOffCurve(group.group)
+		testDecodeBad(t, g, g.NewElement(), bad, ecc.ErrDecodeElement, errMessage)
+
+		// bad encoding, e.g. sign
+		bad = debug.BadElementEncoding(group.group)
+		testDecodeBad(t, g, g.NewElement(), bad, ecc.ErrDecodeElement, errMessage)
+	})
+}
+
+// jsonSerDe mirrors the current JSON object format emitted by Scalar/Element.
+type jsonSerDe struct {
+	Data  string    `json:"data"`
+	Group ecc.Group `json:"group"`
+}
+
+func testDecodingHexFails(t *testing.T, thing1, thing2 serde, expectedError error) {
 	// empty string
 	if err := thing2.DecodeHex(""); err == nil {
 		t.Fatal("expected error on empty string")
@@ -228,66 +265,24 @@ func testDecodingHexFails(t *testing.T, thing1, thing2 serde) {
 
 	if err := thing2.DecodeHex(string(malformed)); err == nil {
 		t.Fatal("expected error on malformed string")
-	} else if !strings.HasSuffix(err.Error(), "DecodeHex: encoding/hex: invalid byte: U+005F '_'") {
+	} else if !errors.Is(err, expectedError) || !strings.Contains(err.Error(), "encoding/hex: invalid byte: U+005F '_'") {
 		t.Fatalf("unexpected error: %q", err)
 	}
 }
 
-func TestEncoding_Hex_Fails(t *testing.T) {
+func TestEncoding_Hex_Scalar_Fails(t *testing.T) {
+	testAllGroups(t, func(group *testGroup) {
+		g := group.group
+		scalar := g.NewScalar().Random()
+		testDecodingHexFails(t, scalar, g.NewScalar(), ecc.ErrDecodeScalar)
+	})
+}
+
+func TestEncoding_Hex_Element_Fails(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		g := group.group
 		scalar := g.NewScalar().Random()
 		element := g.Base().Multiply(scalar)
-
-		// Hex fails
-		testDecodingHexFails(t, scalar, g.NewScalar())
-		testDecodingHexFails(t, element, g.NewElement())
-
-		// Doesn't yield the same decoded result
-		scalar = g.NewScalar().Random()
-		s := g.NewScalar()
-		if err := s.DecodeHex(scalar.Hex()); err != nil {
-			t.Fatalf("unexpected error on valid encoding: %s", err)
-		}
-
-		if !s.Equal(scalar) {
-			t.Fatal(errExpectedEquality)
-		}
-
-		element = g.Base().Multiply(scalar)
-		e := g.NewElement()
-		if err := e.DecodeHex(element.Hex()); err != nil {
-			t.Fatalf("unexpected error on valid encoding: %s", err)
-		}
-
-		if !e.Equal(element) {
-			t.Fatal(errExpectedEquality)
-		}
-	})
-}
-
-func TestJSONReGetGroup(t *testing.T) {
-	testAllGroups(t, func(group *testGroup) {
-		test := struct {
-			Group ecc.Group `json:"group"`
-			Int   int       `json:"int"`
-		}{
-			Group: group.group,
-			Int:   1,
-		}
-
-		enc, err := json.Marshal(test)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		g, err := eccEncoding.JSONReGetGroup(string(enc))
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if g != group.group {
-			t.Fatal(errExpectedEquality)
-		}
+		testDecodingHexFails(t, element, g.NewElement(), ecc.ErrDecodeElement)
 	})
 }

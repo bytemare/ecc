@@ -13,6 +13,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"reflect"
 
 	"github.com/bytemare/ecc/internal"
 
@@ -30,8 +31,8 @@ var (
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16,
 	}
 	orderBytes = []byte{
-		237, 211, 245, 92, 26, 99, 18, 88, 214, 156, 247, 162, 222, 249, 222, 20,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16,
+		16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		20, 222, 249, 222, 162, 247, 156, 214, 88, 18, 99, 26, 92, 245, 211, 237,
 	}
 )
 
@@ -65,7 +66,7 @@ type Scalar struct {
 func assert(scalar internal.Scalar) *Scalar {
 	sc, ok := scalar.(*Scalar)
 	if !ok {
-		panic(internal.ErrCastScalar)
+		panic(internal.WrongGroupError(reflect.TypeFor[*Scalar](), reflect.TypeOf(scalar)))
 	}
 
 	return &Scalar{*ed.NewScalar().Set(&sc.scalar)}
@@ -281,7 +282,8 @@ func (s *Scalar) SetUInt64(i uint64) internal.Scalar {
 	binary.LittleEndian.PutUint64(encoded, i)
 
 	if err := s.decodeScalar(encoded); err != nil {
-		// This cannot happen, since any uint64 is smaller than the order.
+		// This cannot happen under normal operation: every uint64 fits inside the
+		// group order, so decoding would only fail if upstream regressed.
 		panic(fmt.Sprintf("unexpected decoding of uint64 scalar: %s", err))
 	}
 

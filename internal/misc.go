@@ -12,6 +12,7 @@ import (
 	"encoding"
 	"errors"
 	"fmt"
+	"reflect"
 
 	cryptorand "crypto/rand"
 )
@@ -29,14 +30,8 @@ var (
 	// ErrParamNilPoint indicated a forbidden nil or empty point.
 	ErrParamNilPoint = errors.New("nil or empty point")
 
-	// ErrParamInvalidPointEncoding indicates an invalid point encoding has been provided.
-	ErrParamInvalidPointEncoding = errors.New("invalid point encoding")
-
-	// ErrCastElement indicates a failed attempt to cast to a point.
-	ErrCastElement = errors.New("could not cast to same group element (wrong group ?)")
-
-	// ErrCastScalar indicates a failed attempt to cast to a scalar.
-	ErrCastScalar = errors.New("could not cast to same group scalar (wrong group ?)")
+	// ErrWrongGroup indicates an operation has been attempted between incompatible EC groups.
+	ErrWrongGroup = errors.New("wrong group")
 
 	// ErrWrongField indicates an incompatible field has been encountered.
 	ErrWrongField = errors.New("incompatible fields")
@@ -47,24 +42,17 @@ var (
 	// ErrBigIntConversion reports an error in converting to a *big.int.
 	ErrBigIntConversion = errors.New("conversion error")
 
-	// ErrParamNegScalar reports an error when the input scalar is negative.
-	ErrParamNegScalar = errors.New("negative scalar")
-
-	// ErrParamScalarTooBig reports an error when the input scalar is too big.
-	ErrParamScalarTooBig = errors.New("scalar too big")
-
 	// ErrParamScalarInvalidEncoding indicates an invalid scalar encoding has been provided, or that it's too big.
 	ErrParamScalarInvalidEncoding = errors.New("invalid scalar encoding")
 
 	// ErrUInt64TooBig indicates that the scalar is higher than the allowed values for uint64.
 	ErrUInt64TooBig = errors.New("scalar is too big to be uint64")
-
-	// ErrDecodingInvalidLength indicates an invalid encoding length.
-	ErrDecodingInvalidLength = errors.New("invalid encoding length")
-
-	// ErrDecodingInvalidJSONEncoding indicates an invalid JSON encoding.
-	ErrDecodingInvalidJSONEncoding = errors.New("invalid JSON encoding")
 )
+
+// WrongGroupError returns an error indicating a group mismatch.
+func WrongGroupError(expected, got reflect.Type) error {
+	return errors.Join(ErrWrongGroup, fmt.Errorf("expected %v, got %v", expected, got)) //nolint:err113 // it's ok.
+}
 
 // An Encoder can encode itself to machine or human-readable forms.
 type Encoder interface {
@@ -93,10 +81,7 @@ type Decoder interface {
 // RandomBytes returns random bytes of length len (wrapper for crypto/rand).
 func RandomBytes(length int) []byte {
 	random := make([]byte, length)
-	if _, err := cryptorand.Read(random); err != nil {
-		// We can as well not panic and try again in a loop
-		panic(fmt.Errorf("unexpected error in generating random bytes : %w", err))
-	}
+	_, _ = cryptorand.Read(random) //nolint:errcheck // crypto/rand.Read will panic if it fails.
 
 	return random
 }

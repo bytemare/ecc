@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
-- name: Questions, feature requests, and more 💬
-  url: https://github.com/bytemare/ecc/discussions
-  about: Do you need help? Did you make something with ecc? Do you have an idea? Tell us about it!
+  - name: Security Reports
+    url: https://github.com/bytemare/ecc/security/advisories
+    about: Please use GitHub Security Advisories for privately reporting vulnerabilities.

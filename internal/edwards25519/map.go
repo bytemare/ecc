@@ -43,6 +43,8 @@ func fe() *field.Element {
 func element(input []byte) *field.Element {
 	e, err := new(field.Element).SetBytes(input)
 	if err != nil {
+		// Only triggered if hash2curve returns malformed field elements, which should
+		// never happen under the RFC algorithm.
 		panic(err)
 	}
 
@@ -72,11 +74,17 @@ func reverse(b []byte) []byte {
 
 // HashToEdwards25519Field implements hash-to-scalar mapping modulo the order of Edwards25519 using input with dst.
 func HashToEdwards25519Field(input, dst []byte) *edwards25519.Scalar {
-	sc := hash2curve.HashToFieldXMD(crypto.SHA512, input, dst, 1, 1, 48, &order)
-	b := adjust(sc[0].Bytes())
+	uniform := hash2curve.ExpandXMD(crypto.SHA512, input, dst, 48)
+	// Pre-allocate 64-byte buffer and reverse directly into it
+	result := make([]byte, 64)
+	for i := range 48 {
+		result[i] = uniform[47-i]
+	}
 
-	s, err := edwards25519.NewScalar().SetCanonicalBytes(b)
+	s, err := edwards25519.NewScalar().SetUniformBytes(result)
 	if err != nil {
+		// Uniform bytes come from hashing to the required fixed length.
+		// A failure indicates a regression in edwards25519.
 		panic(err)
 	}
 
@@ -165,13 +173,14 @@ func AffineToEdwards(x, y *field.Element) *edwards25519.Point {
 
 	p, err := new(edwards25519.Point).SetExtendedCoordinates(x, y, fe().One(), t)
 	if err != nil {
+		// Construction failures imply a bug in edwards25519.
 		panic(err)
 	}
 
 	return p
 }
 
-// MontgomeryToEdwards lifts a Curve25519 point to its Edwards25519 equivalent.
+// MontgomeryToEdwards lifts a Curve25519 point (u, v) to its Edwards25519 equivalent (x, y).
 func MontgomeryToEdwards(u, v *field.Element) (x, y *field.Element) {
 	invsqrtD, _ := fe().SetBytes([]byte{ //nolint:errcheck // always succeeds
 		6, 126, 69, 255, 170, 4, 110, 204, 130, 26, 125, 75, 209, 211, 161, 197,
@@ -184,7 +193,7 @@ func MontgomeryToEdwards(u, v *field.Element) (x, y *field.Element) {
 
 	y = MontgomeryUToEdwardsY(u)
 
-	return
+	return x, y
 }
 
 // MontgomeryUToEdwardsY transforms a Curve25519 x (or u) coordinate to an Edwards25519 y coordinate.

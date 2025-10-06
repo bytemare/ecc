@@ -11,6 +11,7 @@ package secp256k1
 import (
 	"encoding/binary"
 	"fmt"
+	"reflect"
 
 	"github.com/bytemare/secp256k1"
 
@@ -29,7 +30,7 @@ func newScalar() *Scalar {
 func assert(scalar internal.Scalar) *Scalar {
 	sc, ok := scalar.(*Scalar)
 	if !ok {
-		panic(internal.ErrCastScalar)
+		panic(internal.WrongGroupError(reflect.TypeFor[*Scalar](), reflect.TypeOf(scalar)))
 	}
 
 	return sc

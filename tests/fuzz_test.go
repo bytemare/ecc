@@ -9,10 +9,10 @@
 package ecc_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/bytemare/ecc"
-	"github.com/bytemare/ecc/encoding"
 	"github.com/bytemare/ecc/internal"
 )
 
@@ -27,19 +27,34 @@ func FuzzGroup(f *testing.F) {
 
 			if len(h2DST) != 0 {
 				one := g.NewScalar().SetUInt64(1)
-				if s := g.HashToScalar(h2Input, h2DST); s.IsZero() || s.Equal(one) {
+				s, err := g.HashToScalar(h2Input, h2DST)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if s.IsZero() || s.Equal(one) {
 					t.Fatal("HashToScalar yielded 0 or 1")
 				}
 
-				if e := g.HashToGroup(h2Input, h2DST); e.IsIdentity() || e.Equal(g.Base()) {
+				e, err := g.HashToGroup(h2Input, h2DST)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if e.IsIdentity() || e.Equal(g.Base()) {
 					t.Fatal("HashToGroup yielded identity or generator")
 				}
 
-				if e := g.EncodeToGroup(h2Input, h2DST); e.IsIdentity() || e.Equal(g.Base()) {
+				e, err = g.EncodeToGroup(h2Input, h2DST)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if e.IsIdentity() || e.Equal(g.Base()) {
 					t.Fatal("HashToGroup yielded identity or generator")
 				}
 			}
-		}); panicked && err.Error() != internal.ErrInvalidGroup.Error() {
+		}); panicked && !errors.Is(err, internal.ErrInvalidGroup) {
 			t.Fatal(err)
 		}
 	})
@@ -56,7 +71,7 @@ func FuzzScalar(f *testing.F) {
 			_ = s.DecodeHex(string(input))
 			_ = s.UnmarshalJSON(input)
 			_ = s.UnmarshalBinary(input)
-		}); panicked && err.Error() != internal.ErrInvalidGroup.Error() {
+		}); panicked && !errors.Is(err, internal.ErrInvalidGroup) {
 			t.Fatal(err)
 		}
 	})
@@ -72,14 +87,8 @@ func FuzzElement(f *testing.F) {
 			_ = s.DecodeHex(string(input))
 			_ = s.UnmarshalJSON(input)
 			_ = s.UnmarshalBinary(input)
-		}); panicked && err.Error() != internal.ErrInvalidGroup.Error() {
+		}); panicked && !errors.Is(err, internal.ErrInvalidGroup) {
 			t.Fatal(err)
 		}
-	})
-}
-
-func FuzzJSONReGetGroup(f *testing.F) {
-	f.Fuzz(func(t *testing.T, input string) {
-		_, _ = encoding.JSONReGetGroup(input)
 	})
 }

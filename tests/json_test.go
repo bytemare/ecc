@@ -10,14 +10,13 @@ package ecc_test
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/bytemare/ecc"
 	"github.com/bytemare/ecc/internal"
-
-	eccEncoding "github.com/bytemare/ecc/encoding"
 )
 
 func replaceStringInBytes(data []byte, old, new string) []byte {
@@ -28,107 +27,194 @@ func replaceStringInBytes(data []byte, old, new string) []byte {
 }
 
 type jsonTesterBaddie struct {
-	key, value, expectedError string
+	receiver      serde
+	expectedError error
+	name          string
+	key           string
+	badValue      string
 }
 
-func testJSONBaddie(in any, baddie jsonTesterBaddie) error {
-	data, err := json.Marshal(in)
+func testJSONBaddie(t *testing.T, baddie jsonTesterBaddie) {
+	data, err := json.Marshal(baddie.receiver)
 	if err != nil {
-		return err
+		t.Fatal(err)
 	}
 
-	data = replaceStringInBytes(data, baddie.key, baddie.value)
+	// Replace the good value with the bad value that should trigger an error
+	data = replaceStringInBytes(data, baddie.key, baddie.badValue)
+	err = json.Unmarshal(data, baddie.receiver)
 
-	_, err = eccEncoding.JSONReGetGroup(string(data))
-
-	if len(baddie.expectedError) != 0 { // we're expecting an error
-		if err == nil ||
-			!strings.HasPrefix(err.Error(), baddie.expectedError) {
-			return fmt.Errorf("expected error %q, got %q", baddie.expectedError, err)
-		}
-	} else {
-		if err != nil {
-			return fmt.Errorf("unexpected error %q", err)
-		}
+	if err == nil {
+		t.Fatal("expected an error but got none")
 	}
 
-	return nil
+	var (
+		syntaxErr *json.SyntaxError
+		typeErr   *json.UnmarshalTypeError
+	)
+	if errors.As(err, &syntaxErr) || errors.As(err, &typeErr) {
+		if !strings.Contains(err.Error(), baddie.expectedError.Error()) {
+			t.Log(string(data))
+			t.Fatalf("expected error %q, got %q", baddie.expectedError, err)
+		}
+
+		return
+	}
+
+	expectErrors(t, func() error { return err }, baddie.expectedError)
 }
 
-func jsonTester(badJSONErr string, in any) error {
-	// JSON: bad json
-	baddie := jsonTesterBaddie{
-		key:           "\"group\"",
-		value:         "bad",
-		expectedError: "invalid character 'b' looking for beginning of object key string",
-	}
-
-	if err := testJSONBaddie(in, baddie); err != nil {
-		// return err
-	}
-
-	// UnmarshallJSON: bad group
-	baddie = jsonTesterBaddie{
-		key:           "\"group\"",
-		value:         "\"group\":2, \"oldGroup\"",
-		expectedError: internal.ErrInvalidGroup.Error(),
-	}
-
-	if err := testJSONBaddie(in, baddie); err != nil {
-		return err
-	}
-
-	// UnmarshallJSON: bad ciphersuite
-	baddie = jsonTesterBaddie{
-		key:           "\"group\"",
-		value:         "\"group\":70, \"oldGroup\"",
-		expectedError: internal.ErrInvalidGroup.Error(),
-	}
-
-	if err := testJSONBaddie(in, baddie); err != nil {
-		return err
-	}
-
-	// UnmarshallJSON: bad ciphersuite
-	baddie = jsonTesterBaddie{
-		key:           "\"group\"",
-		value:         "\"group\":-1, \"oldGroup\"",
-		expectedError: badJSONErr,
-	}
-
-	if err := testJSONBaddie(in, baddie); err != nil {
-		return err
-	}
-
-	// UnmarshallJSON: bad ciphersuite
-	overflow := "9223372036854775808" // MaxInt64 + 1
-	baddie = jsonTesterBaddie{
-		key:           "\"group\"",
-		value:         "\"group\":" + overflow + ", \"oldGroup\"",
-		expectedError: "failed to read Group: strconv.Atoi: parsing \"9223372036854775808\": value out of range",
-	}
-
-	if err := testJSONBaddie(in, baddie); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func TestJSONReGetGroup_BadString(t *testing.T) {
+func TestDecode_Group_Fail(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
-		test := struct {
-			Group ecc.Group `json:"group"`
-			Int   int       `json:"int"`
-		}{
-			Group: group.group,
-			Int:   1,
+		// Mismatched group should fail.
+		var bad ecc.Group
+		switch group.group {
+		case ecc.Ristretto255Sha512:
+			bad = ecc.P256Sha256
+		default:
+			bad = ecc.Ristretto255Sha512
 		}
 
-		// JSON: bad json
-		errInvalidJSON := "invalid JSON encoding"
-		if err := jsonTester(errInvalidJSON, test); err != nil {
-			t.Fatal(err)
+		tests := []jsonTesterBaddie{
+			// Different group than receiver
+			{
+				receiver:      group.group.NewScalar(),
+				name:          "Scalar - different group",
+				key:           "\"group\"",
+				badValue:      "\"group\":" + strconv.Itoa(int(bad)) + ", \"oldGroup\"",
+				expectedError: internal.ErrInvalidGroup,
+			},
+
+			// Different group than receiver
+			{
+				receiver:      group.group.NewElement(),
+				name:          "Element - different group",
+				key:           "\"group\"",
+				badValue:      "\"group\":" + strconv.Itoa(int(bad)) + ", \"oldGroup\"",
+				expectedError: internal.ErrInvalidGroup,
+			},
+
+			// JSON: bad json
+			{
+				receiver:      group.group.NewScalar(),
+				name:          "Scalar - bad json",
+				key:           "\"group\"",
+				badValue:      "bad",
+				expectedError: errors.New("invalid character 'b' looking for beginning of object key string"),
+			},
+
+			// JSON: bad json
+			{
+				receiver:      group.group.NewElement(),
+				name:          "Element - bad json",
+				key:           "\"group\"",
+				badValue:      "bad",
+				expectedError: errors.New("invalid character 'b' looking for beginning of object key string"),
+			},
+
+			// UnmarshallJSON: bad group
+			{
+				receiver:      group.group.NewScalar(),
+				name:          "Scalar - bad group",
+				key:           "\"group\"",
+				badValue:      "\"group\":2, \"oldGroup\"",
+				expectedError: internal.ErrInvalidGroup,
+			},
+
+			// UnmarshallJSON: bad group
+			{
+				receiver:      group.group.NewElement(),
+				name:          "Element - bad group",
+				key:           "\"group\"",
+				badValue:      "\"group\":2, \"oldGroup\"",
+				expectedError: internal.ErrInvalidGroup,
+			},
+
+			// UnmarshallJSON: bad ciphersuite
+			{
+				receiver:      group.group.NewScalar(),
+				name:          "Scalar - bad ciphersuite",
+				key:           "\"group\"",
+				badValue:      "\"group\":70, \"oldGroup\"",
+				expectedError: internal.ErrInvalidGroup,
+			},
+
+			// UnmarshallJSON: bad ciphersuite
+			{
+				receiver:      group.group.NewElement(),
+				name:          "Element - bad ciphersuite",
+				key:           "\"group\"",
+				badValue:      "\"group\":70, \"oldGroup\"",
+				expectedError: internal.ErrInvalidGroup,
+			},
+
+			// UnmarshallJSON: bad ciphersuite
+			{
+				receiver: group.group.NewScalar(),
+				name:     "Scalar - bad group (negative)",
+				key:      "\"group\"",
+				badValue: "\"group\":-1, \"oldGroup\"",
+				expectedError: errors.New(
+					"json: cannot unmarshal number -1 into Go struct field jsonScalar.group of type ecc.Group",
+				),
+			},
+
+			// UnmarshallJSON: bad ciphersuite
+			{
+				receiver: group.group.NewElement(),
+				name:     "Element - bad group (negative)",
+				key:      "\"group\"",
+				badValue: "\"group\":-1, \"oldGroup\"",
+				expectedError: errors.New(
+					"json: cannot unmarshal number -1 into Go struct field jsonElement.group of type ecc.Group",
+				),
+			},
+
+			// UnmarshallJSON: bad ciphersuite
+			{
+				receiver: group.group.NewScalar(),
+				name:     "Scalar - bad group (too big)",
+				key:      "\"group\"",
+				badValue: "\"group\":" + "9223372036854775808" + ", \"oldGroup\"", // MaxInt64 + 1
+				expectedError: errors.New(
+					"json: cannot unmarshal number 9223372036854775808 into Go struct field jsonScalar.group of type ecc.Group",
+				),
+			},
+
+			// UnmarshallJSON: bad ciphersuite
+			{
+				receiver: group.group.NewElement(),
+				name:     "Element - bad group (too big)",
+				key:      "\"group\"",
+				badValue: "\"group\":" + "9223372036854775808" + ", \"oldGroup\"", // MaxInt64 + 1
+				expectedError: errors.New(
+					"json: cannot unmarshal number 9223372036854775808 into Go struct field jsonElement.group of type ecc.Group",
+				),
+			},
+
+			// UnmarshallJSON: bad value
+			{
+				receiver:      group.group.NewScalar(),
+				name:          "Scalar - bad value",
+				key:           "\"data\"",
+				badValue:      "\"data\":" + "123^" + ", \"oldData\"", // MaxInt64 + 1
+				expectedError: errors.New("invalid character"),
+			},
+
+			// UnmarshallJSON: bad value
+			{
+				receiver:      group.group.NewElement(),
+				name:          "Element - bad value",
+				key:           "\"data\"",
+				badValue:      "\"data\":" + "123}" + ", \"oldData\"", // MaxInt64 + 1
+				expectedError: errors.New("invalid character"),
+			},
+		}
+
+		for _, baddie := range tests {
+			t.Run(baddie.name, func(t *testing.T) {
+				testJSONBaddie(t, baddie)
+			})
 		}
 	})
 }

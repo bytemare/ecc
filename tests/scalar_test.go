@@ -19,8 +19,11 @@ import (
 	"testing"
 
 	"github.com/bytemare/ecc"
-	"github.com/bytemare/ecc/debug"
 	"github.com/bytemare/ecc/internal"
+	"github.com/bytemare/ecc/internal/edwards25519"
+	"github.com/bytemare/ecc/internal/nist"
+	"github.com/bytemare/ecc/internal/ristretto"
+	"github.com/bytemare/ecc/internal/secp256k1"
 )
 
 func TestScalar_Group(t *testing.T) {
@@ -62,22 +65,16 @@ func TestScalar_WrongInput(t *testing.T) {
 
 			// Add a special test for nist groups, using a different field
 			wrongfield := ((group.group + 1) % 3) + 3
-			if err := testPanic("wrong field", internal.ErrWrongField, exec(scalar.Add, wrongfield.NewScalar())); err != nil {
-				t.Fatal(err)
-			}
+			expectPanic(t, "wrong field", internal.ErrWrongField, exec(scalar.Add, wrongfield.NewScalar()))
 		default:
 			t.Fatalf("Invalid group id %d", group.group)
 		}
 
 		for _, f := range methods {
-			if err := testPanic("wrong group", internal.ErrCastScalar, exec(f, wrongGroup.NewScalar())); err != nil {
-				t.Fatal(err)
-			}
+			expectPanic(t, "wrong group", internal.ErrWrongGroup, exec(f, wrongGroup.NewScalar()))
 		}
 
-		if err := testPanic("wrong group", internal.ErrCastScalar, equal(scalar.Equal, wrongGroup.NewScalar())); err != nil {
-			t.Fatal(err)
-		}
+		expectPanic(t, "wrong group", internal.ErrWrongGroup, equal(scalar.Equal, wrongGroup.NewScalar()))
 	})
 }
 
@@ -137,6 +134,7 @@ func parseScalar(s *ecc.Scalar) ([]byte, bool) {
 }
 
 func testScalarUInt64(t *testing.T, s *ecc.Scalar, expectedValue uint64, expectedError error) {
+	t.Helper()
 	i, err := s.UInt64()
 
 	if err == nil {
@@ -146,7 +144,7 @@ func testScalarUInt64(t *testing.T, s *ecc.Scalar, expectedValue uint64, expecte
 	} else {
 		if expectedError == nil {
 			t.Fatalf("unexpected error %q", err)
-		} else if err.Error() != expectedError.Error() {
+		} else if !errors.Is(err, expectedError) {
 			t.Fatalf("expected error %q, got %q", expectedError, err)
 		}
 	}
@@ -157,7 +155,6 @@ func testScalarUInt64(t *testing.T, s *ecc.Scalar, expectedValue uint64, expecte
 }
 
 func TestScalar_UInt64(t *testing.T) {
-	expectedError := errors.New("scalar is too big to be uint64")
 	testAllGroups(t, func(group *testGroup) {
 		// 0
 		testScalarUInt64(t, group.group.NewScalar(), 0, nil)
@@ -170,11 +167,11 @@ func TestScalar_UInt64(t *testing.T) {
 
 		// Max Uint64+1 fails
 		s := group.group.NewScalar().SetUInt64(math.MaxUint64).Add(group.group.NewScalar().One())
-		testScalarUInt64(t, s, 0, expectedError)
+		testScalarUInt64(t, s, 0, internal.ErrUInt64TooBig)
 
 		// Order - 1 fails
 		s = group.group.NewScalar().Subtract(group.group.NewScalar().One())
-		testScalarUInt64(t, s, 0, expectedError)
+		testScalarUInt64(t, s, 0, internal.ErrUInt64TooBig)
 	})
 }
 
@@ -190,7 +187,7 @@ func TestScalar_SetUInt64(t *testing.T) {
 			t.Fatal("expected 1")
 		}
 
-		// uint64 max value is 18,446,744,073,709,551,615
+		// uint64 max badValue is 18,446,744,073,709,551,615
 		s.SetUInt64(math.MaxUint64)
 		ref := make([]byte, group.group.ScalarLength())
 
@@ -220,39 +217,54 @@ func TestScalar_EncodedLength(t *testing.T) {
 	})
 }
 
-func TestScalar_Decode_OutOfBounds(t *testing.T) {
-	testAllGroups(t, func(group *testGroup) {
-		decodeErrPrefix := "scalar Decode: "
-		unmarshallBinaryErrPrefix := "scalar UnmarshalBinary: "
+func TestScalar_Internal_NilOperations(t *testing.T) {
+	var nilScalar internal.Scalar
 
-		// Decode invalid length
-		errMessage := "invalid scalar length"
-		bad := []byte{0, 1}
+	cases := []struct {
+		scalar internal.Scalar
+		name   string
+	}{
+		{scalar: edwards25519.New().NewScalar(), name: "Edwards"},
+		{scalar: ristretto.New().NewScalar(), name: "Ristretto"},
+		{scalar: secp256k1.New().NewScalar(), name: "Secp256k1"},
+		{scalar: nist.P256().NewScalar(), name: "NistP256"},
+	}
 
-		expected := errors.New(decodeErrPrefix + errMessage)
-		if err := group.group.NewScalar().Decode(bad); err == nil || err.Error() != expected.Error() {
-			t.Errorf("expected error %q, got %v", expected, err)
-		}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			s := tc.scalar
+			s.One()
 
-		expected = errors.New(unmarshallBinaryErrPrefix + errMessage)
-		if err := group.group.NewScalar().UnmarshalBinary(bad); err == nil || err.Error() != expected.Error() {
-			t.Errorf("expected error %q, got %v", expected, err)
-		}
+			if s.Add(nilScalar) != s {
+				t.Fatal("Add should return receiver when scalar nil")
+			}
 
-		// Decode a scalar higher than order
-		errMessage = "invalid scalar encoding"
-		bad = debug.BadScalarHigh(group.group)
+			s.One()
+			if s.Subtract(nilScalar) != s {
+				t.Fatal("Subtract should return receiver when scalar nil")
+			}
 
-		expected = errors.New(decodeErrPrefix + errMessage)
-		if err := group.group.NewScalar().Decode(bad); err == nil || err.Error() != expected.Error() {
-			t.Errorf("expected error %q, got %v", expected, err)
-		}
+			s.One()
+			if s.Equal(nilScalar) != 0 {
+				t.Fatal("Equal should return 0 when compared to nil")
+			}
 
-		expected = errors.New(unmarshallBinaryErrPrefix + errMessage)
-		if err := group.group.NewScalar().UnmarshalBinary(bad); err == nil || err.Error() != expected.Error() {
-			t.Errorf("expected error %q, got %v", expected, err)
-		}
-	})
+			s.One()
+			s.Multiply(nilScalar)
+
+			if !s.IsZero() {
+				t.Fatal("Multiply with nil scalar should zero the receiver")
+			}
+
+			s.One()
+			s.Set(nilScalar)
+
+			if !s.IsZero() {
+				t.Fatal("Set with nil scalar should zero the receiver")
+			}
+		})
+	}
 }
 
 func TestScalar_Arithmetic(t *testing.T) {
@@ -522,7 +534,7 @@ func scalarTestPow(t *testing.T, g ecc.Group) {
 func bigIntExp(t *testing.T, g ecc.Group, base, exp *big.Int) *ecc.Scalar {
 	orderBytes := g.Order()
 
-	if g == ecc.Ristretto255Sha512 || g == ecc.Edwards25519Sha512 {
+	if g == ecc.Ristretto255Sha512 {
 		slices.Reverse(orderBytes)
 	}
 
