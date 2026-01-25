@@ -1,6 +1,6 @@
 # Roadmap
 
-- explicitly document the panics that my happen when using ecc
+- explicitly document the panics that may happen when using ecc
 - Track and publish long term test metrics (coverage trends, flaky test dashboards).
 - Add CI gates for benchmark regressions to detect performance drifts automatically.
 - SLSA Level 4 compliance

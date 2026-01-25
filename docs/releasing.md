@@ -1,12 +1,6 @@
 # Releasing
 
-This project publishes Go modules following Semantic Versioning. Releases are manual and should be coordinated via GitHub pull requests.
-
-## Prerequisites
-
-- Ensure you have push access to `github.com/bytemare/ecc`.
-- Install the required Go toolchain versions (see CI matrix for currently supported versions).
-- Sign commits and tags with your DCO-compliant identity.
+This project publishes Go modules following Semantic Versioning. Releases are coordinated via GitHub pull requests and automated workflows.
 
 ## Release Checklist
 
@@ -15,19 +9,17 @@ This project publishes Go modules following Semantic Versioning. Releases are ma
    - Open or update an issue/PR describing notable changes.
 
 2. **Update documentation**
-   - Add release notes to [CHANGELOG.md](../CHANGELOG.md) under a new version heading.
+   - Add release notes to [CHANGELOG.md](../.github/CHANGELOG.md) under a new version heading.
    - Verify README snippets and policy docs still apply.
 
 3. **Run validation locally**
    ```bash
-   go test ./...
-   go vet ./...
-   # Optional: golangci-lint run
+   make -C .github lint vuln test cover fuzz
    ```
 
 4. **Tag the release**
    ```bash
-   git commit -am "chore: cut vX.Y.Z"
+   git commit -am "chore: cut X.Y.Z"
    git tag -s vX.Y.Z
    ```
    - If signing keys are unavailable, create a lightweight tag (`git tag vX.Y.Z`).
@@ -38,12 +30,16 @@ This project publishes Go modules following Semantic Versioning. Releases are ma
     git push origin vX.Y.Z
    ```
 
-6. **Create the GitHub Release**
-   - Draft a new release from `vX.Y.Z`.
-   - Include the changelog entry and any upgrade notes.
-   - Upload artifacts (e.g., SBOM) if applicable.
+6. **Let automation publish artifacts**
+   - Pushing the tag triggers `.github/workflows/wf-release.yaml`.
+   - The workflow builds a source archive, generates a CycloneDX SBOM, records checksums, and uploads an SBOM attestation.
+   - A reusable SLSA provenance job attaches the provenance bundle to the release.
+   - Monitor the workflow run for success. Confirm that the release contains the tarball, SBOM, and provenance `.intoto.jsonl` assets.
 
-7. **Post-release follow-up**
+7. **Publish notes**
+   - If the automated release does not include human-readable notes, edit the GitHub release, paste the `CHANGELOG.md` entry, and save.
+
+8. **Post-release follow-up**
    - Announce the release in the relevant issue or discussion.
    - Triage any downstream reports and start planning the next iteration.
 
