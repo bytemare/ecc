@@ -25,6 +25,7 @@ Thanks for investing time in improving this module! Pair this workflow guide wit
 - Follow [Conventional Commits](https://www.conventionalcommits.org/) for clear history (`feat:`, `fix:`, `docs:`, `test:`, `chore:` and so on).
 - Every commit must include a `Signed-off-by` trailer to satisfy the [Developer Certificate of Origin](https://developercertificate.org/). Use `git commit -s` to add it automatically.
 - Commit only what you have built and tested locally. Avoid large unrelated changes in a single commit.
+- Sign your commits using GPG or SSH.
 
 ## 5. Quality Checks
 
@@ -36,6 +37,7 @@ Thanks for investing time in improving this module! Pair this workflow guide wit
    These targets mirror the CI tests (golangci-lint, `go test`, fuzzing, `govulncheck`, etc.).
 2. Ensure `go mod tidy` produces no diff and that coverage does not regress meaningfully. If coverage drops, explain why in the pull request.
 3. Update documentation when behaviour or APIs change. Architecture or security changes should be reflected in the relevant `docs/` files.
+4. **For user-facing changes**, add an entry to [CHANGELOG.md](../CHANGELOG.md) under `[Unreleased]` describing what changed.
 
 Refer to [docs/architecture_and_guidelines.md](../docs/architecture_and_guidelines.md) for deeper context on invariants, error handling, and extension checklists.
 

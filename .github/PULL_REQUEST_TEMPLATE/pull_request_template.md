@@ -34,4 +34,4 @@
 - [ ] My change requires a change to the documentation.
 - [ ] I updated documentation (README, docs/, CHANGELOG) where applicable.
 - [ ] I have added tests to cover my changes or explained why they are not needed.
-- [ ] `make -C ecc/.github lint` and `make -C ecc/.github test` pass on my machine.
+- [ ] I ran the validation suite as described in [CONTRIBUTING.md §5](../CONTRIBUTING.md#5-quality-checks).

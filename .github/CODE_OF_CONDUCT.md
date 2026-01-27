@@ -44,7 +44,7 @@ We agree to restrict the following behaviors in our community. Instances, threat
 
 Tensions can occur between community members even when they are trying their best to collaborate. Not every conflict represents a code of conduct violation, and this Code of Conduct reinforces encouraged behaviors and norms that can help avoid conflicts and minimize harm.
 
-When an incident does occur, it is important to report it promptly. To report a possible violation, use the private GitHub Security Advisory form: https://github.com/bytemare/ecc/security/advisories. The advisory workflow keeps the conversation limited to the maintainer team until a resolution path is agreed.
+When an incident does occur, it is important to report it promptly. To report a Code of Conduct violation, open a private discussion with the maintainer via [GitHub Discussions](https://github.com/bytemare/ecc/discussions) (select "New discussion" and choose a private category if available) or email the maintainer directly. For **security vulnerabilities**, use the separate process in [SECURITY.md](SECURITY.md).
 
 Community Moderators take reports of violations seriously and will make every effort to respond in a timely manner. They will investigate all reports of code of conduct violations, reviewing messages, logs, and recordings, or interviewing witnesses and other participants. Community Moderators will keep investigation and enforcement actions as transparent as possible while prioritizing safety and confidentiality. In order to honor these values, enforcement actions are carried out in private with the involved parties, but communicating to the whole community may be part of a mutually agreed upon resolution.
 
