@@ -6,7 +6,6 @@
 // LICENSE file in the root directory of this source tree or at
 // https://spdx.org/licenses/MIT.html
 
-// Package ristretto allows simple and abstracted operations in the Ristretto255 group.
 package ristretto
 
 import (

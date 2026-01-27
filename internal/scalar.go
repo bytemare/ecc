@@ -6,7 +6,6 @@
 // LICENSE file in the root directory of this source tree or at
 // https://spdx.org/licenses/MIT.html
 
-// Package internal defines simple and abstract APIs to group Elements and Scalars.
 package internal
 
 // Scalar interface abstracts common operations on scalars in a prime-order Group.

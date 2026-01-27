@@ -6,9 +6,7 @@ Only the latest minor release of each supported major version receives security 
 
 ## Reporting a Vulnerability
 
-Please report suspected vulnerabilities **privately** via GitHub Security Advisories:
-
-- https://github.com/bytemare/ecc/security/advisories
+Please report suspected vulnerabilities **privately** via [GitHub Security Advisories](https://github.com/bytemare/ecc/security/advisories).
 
 Using the advisory workflow ensures that the report is shared only with the maintainers. Do **not** open a public issue for security reports.
 

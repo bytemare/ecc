@@ -58,7 +58,7 @@ Residual risks and assumptions are enumerated in Section 4.
 
 Principles not yet fully addressed (e.g., separation of duties) are tracked on the [roadmap](roadmap.md) for future governance enhancements.
 
-### Pipeline Security (SLSA Level 4)
+### Pipeline Security
 
 - The code base is managed, retained, version controlled, and archived through GitHub.
 - Required signed commits and tags for verified history.
@@ -98,7 +98,9 @@ Principles not yet fully addressed (e.g., separation of duties) are tracked on t
 
 ## 6. Reporting and Incident Handling
 
-Potential vulnerabilities should be reported via the private [GitHub Security Advisory form](https://github.com/bytemare/ecc/security/advisories). Maintainers target acknowledgement within seven calendar days and a remediation plan within thirty days depending on severity. All advisory threads remain private until a coordinated disclosure is agreed. If timelines slip the maintainer will update reporters inside the advisory and document the outcome in the next release notes. Incident response activities and lessons learned are recorded alongside the advisory reference in the changelog to keep a historical trail.
+For security vulnerability reports, follow the process in [SECURITY.md](../.github/SECURITY.md).
+The security policy documents acknowledgement timelines, disclosure coordination, and remediation expectations.
+Incident response activities and lessons learned are recorded in the [CHANGELOG](../CHANGELOG.md).
 
 ---
 

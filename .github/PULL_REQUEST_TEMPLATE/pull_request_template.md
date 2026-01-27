@@ -1,9 +1,9 @@
 <!--- Provide a general summary of your changes in the Title above -->
 
-### Description
+# Description
 <!--- Describe your changes in detail -->
 
-### Related Issue
+## Related Issue
 <!--- This project only accepts pull requests related to open issues -->
 <!--- If suggesting a new feature or change, please discuss it in an issue first -->
 <!--- If fixing a bug, there should be an issue describing it with steps to reproduce -->
@@ -25,13 +25,12 @@
 - [ ] New feature (non-breaking change which adds functionality)
 - [ ] Breaking change (fix or feature that would cause existing functionality to change)
 
-### Checklist:
+### Checklist
 <!--- Go over all the following points, and put an `x` in all the boxes that apply. -->
 <!--- If you're unsure about any of these, don't hesitate to ask. We're here to help! -->
-- [ ] I read and followed the [Contributing guide](../CONTRIBUTING.md).
-- [ ] My commits include a `Signed-off-by` line to satisfy the DCO.
+- [ ] I have read the **CONTRIBUTING** document.
 - [ ] My code follows the code style of this project.
 - [ ] My change requires a change to the documentation.
-- [ ] I updated documentation (README, docs/, CHANGELOG) where applicable.
-- [ ] I have added tests to cover my changes or explained why they are not needed.
-- [ ] I ran the validation suite as described in [CONTRIBUTING.md §5](../CONTRIBUTING.md#5-quality-checks).
+- [ ] I have updated the documentation accordingly.
+- [ ] I have added tests to cover my changes.
+- [ ] All new and existing tests passed.

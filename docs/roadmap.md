@@ -9,7 +9,7 @@
 - Nightly Mutation testing.
 - Introduce automated architectural conformance checks (for example static analysis that flags direct backend access outside adapters).
 - Expand formal design reviews for new curve integrations and record decisions in the repository.
-- edwards25519: hash to curve uses `hash2curve.HashToFieldXMD`, which requires a `big.Int`. We should use a fiat-crypto backed reduction after `hash2curve.ExpandXMD` instead. 
+- edwards25519: hash to curve uses `hash2curve.HashToFieldXMD`, which requires a `big.Int`. We should use a fiat-crypto backed reduction after `hash2curve.ExpandXMD` instead.
 - edwards25519: implement cofactor clearing (e.g., multiply by 8) for identity decoding?
 - add support for curve25519
 - add edwards448 and decaf448 once they are implemented

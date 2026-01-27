@@ -24,10 +24,11 @@ permissions: { }
 
 jobs:
   Test:
+    name: Test Go
     strategy:
       fail-fast: false
       matrix:
         go: ['1.25']
-    uses: bytemare/workflows/.github/workflows/test-go.yaml@d5a06bc8d9820c7b603cfcd3b69821f84eedd23c
+    uses: bytemare/workflows/.github/workflows/test-go.yaml
     with:
       version: ${{ matrix.go }}

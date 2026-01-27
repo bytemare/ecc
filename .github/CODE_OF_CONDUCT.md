@@ -1,10 +1,16 @@
-# Code of Conduct [![](https://img.shields.io/badge/code_of_conduct-Contributor_Covenant_3.0-4baaaa.svg)](CODE_OF_CONDUCT.md)
+# Code of Conduct [![Contributor Covenant Code of Conduct](https://img.shields.io/badge/code_of_conduct-Contributor_Covenant_3.0-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
 ## Our Pledge
 
 We pledge to make our community welcoming, safe, and equitable for all.
 
-We are committed to fostering an environment that respects and promotes the dignity, rights, and contributions of all individuals, regardless of characteristics including race, ethnicity, caste, color, age, physical characteristics, neurodiversity, disability, sex or gender, gender identity or expression, sexual orientation, language, philosophy or religion, national or social origin, socio-economic position, level of education, or other status. The same privileges of participation are extended to everyone who participates in good faith and in accordance with this Covenant.
+We are committed to fostering an environment that respects and promotes the dignity, rights,
+and contributions of all individuals, regardless of characteristics including race, ethnicity,
+caste, color, age, physical characteristics, neurodiversity, disability, sex or gender, gender
+identity or expression, sexual orientation, language, philosophy or religion, national or
+social origin, socio-economic position, level of education, or other status. The same
+privileges of participation are extended to everyone who participates in good faith and in
+accordance with this Covenant.
 
 ## Encouraged Behaviors
 
@@ -44,9 +50,19 @@ We agree to restrict the following behaviors in our community. Instances, threat
 
 Tensions can occur between community members even when they are trying their best to collaborate. Not every conflict represents a code of conduct violation, and this Code of Conduct reinforces encouraged behaviors and norms that can help avoid conflicts and minimize harm.
 
-When an incident does occur, it is important to report it promptly. To report a Code of Conduct violation, open a private discussion with the maintainer via [GitHub Discussions](https://github.com/bytemare/ecc/discussions) (select "New discussion" and choose a private category if available) or email the maintainer directly. For **security vulnerabilities**, use the separate process in [SECURITY.md](SECURITY.md).
+When an incident does occur, it is important to report it promptly. To report a Code of
+Conduct violation, open a private discussion with the maintainer via
+[GitHub Discussions](https://github.com/bytemare/ecc/discussions) (select "New discussion"
+and choose a private category if available) or email the maintainer directly. For
+**security vulnerabilities**, use the separate process in [SECURITY.md](SECURITY.md).
 
-Community Moderators take reports of violations seriously and will make every effort to respond in a timely manner. They will investigate all reports of code of conduct violations, reviewing messages, logs, and recordings, or interviewing witnesses and other participants. Community Moderators will keep investigation and enforcement actions as transparent as possible while prioritizing safety and confidentiality. In order to honor these values, enforcement actions are carried out in private with the involved parties, but communicating to the whole community may be part of a mutually agreed upon resolution.
+Community Moderators take reports of violations seriously and will make every effort to
+respond in a timely manner. They will investigate all reports of code of conduct violations,
+reviewing messages, logs, and recordings, or interviewing witnesses and other participants.
+Community Moderators will keep investigation and enforcement actions as transparent as
+possible while prioritizing safety and confidentiality. In order to honor these values,
+enforcement actions are carried out in private with the involved parties, but communicating
+to the whole community may be part of a mutually agreed upon resolution.
 
 ## Addressing and Repairing Harm
 
@@ -84,8 +100,18 @@ This Code of Conduct applies within all community spaces, and also applies when 
 
 ## Attribution
 
-This Code of Conduct is adapted from the Contributor Covenant, version 3.0, permanently available at [https://www.contributor-covenant.org/version/3/0/](https://www.contributor-covenant.org/version/3/0/).
+This Code of Conduct is adapted from the Contributor Covenant, version 3.0, permanently
+available at [https://www.contributor-covenant.org/version/3/0/](https://www.contributor-covenant.org/version/3/0/).
 
-Contributor Covenant is stewarded by the Organization for Ethical Source and licensed under CC BY-SA 4.0. To view a copy of this license, visit [https://creativecommons.org/licenses/by-sa/4.0/](https://creativecommons.org/licenses/by-sa/4.0/)
+Contributor Covenant is stewarded by the Organization for Ethical Source and licensed under
+CC BY-SA 4.0. To view a copy of this license, visit
+[https://creativecommons.org/licenses/by-sa/4.0/](https://creativecommons.org/licenses/by-sa/4.0/)
 
-For answers to common questions about Contributor Covenant, see the FAQ at [https://www.contributor-covenant.org/faq](https://www.contributor-covenant.org/faq). Translations are provided at [https://www.contributor-covenant.org/translations](https://www.contributor-covenant.org/translations). Additional enforcement and community guideline resources can be found at [https://www.contributor-covenant.org/resources](https://www.contributor-covenant.org/resources). The enforcement ladder was inspired by the work of [Mozilla’s code of conduct team](https://github.com/mozilla/inclusion).
+For answers to common questions about Contributor Covenant, see the FAQ at
+[https://www.contributor-covenant.org/faq](https://www.contributor-covenant.org/faq).
+Translations are provided at
+[https://www.contributor-covenant.org/translations](https://www.contributor-covenant.org/translations).
+Additional enforcement and community guideline resources can be found at
+[https://www.contributor-covenant.org/resources](https://www.contributor-covenant.org/resources).
+The enforcement ladder was inspired by the work of
+[Mozilla’s code of conduct team](https://github.com/mozilla/inclusion).

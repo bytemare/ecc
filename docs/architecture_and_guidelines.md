@@ -7,7 +7,7 @@ This guide summarises how `github.com/bytemare/ecc` is structured, how the codeb
 ```mermaid
 flowchart LR
     Client[Downstream application] -->|Selects group, calls API| PublicAPI
-    PublicAPI[Package `ecc` (groups.go, element.go, scalar.go)] -->|Delegates| InternalLayer
+    PublicAPI[Package ecc<br/>groups.go<br/>element.go<br/>scalar.go] -->|Delegates| InternalLayer
     InternalLayer[Adapters under internal/*] -->|Wrap| Backends
     Backends[Third-party curve libraries]
     PublicAPI -->|Domain separation| Hash2Curve[github.com/bytemare/hash2curve]
@@ -24,6 +24,13 @@ flowchart LR
 - `Group.MakeDST` provides non-empty RFC 9380 suggested domain separation tags.
 - `Element` and `Scalar` embed their `internal` counterparts. They guard against nil operands, returning early rather than panicking for additive operations.
 - JSON marshaling adds group metadata.
+
+### Module Layout
+
+- `element.go`, `scalar.go`, `groups.go`: Public API and wrapper types that embed backend implementations.
+- `internal/`: Curve-specific implementations grouped by backend (`nist`, `ristretto`, `edwards25519`, `secp256k1`). The internal layer satisfies the shared interfaces for elements, scalars, and groups.
+- `debug/`: Helpers used in tests for generating malformed inputs.
+- `tests/`: Compatibility, encoding, and fuzz tests covering shared behaviors.
 
 ## Data Flow and Lifetimes
 
@@ -43,12 +50,26 @@ All operations occur in-memory. There's no persistent state or network I/O.
 - **Generics**: Use where they meaningfully reduce duplication (e.g., the NIST adapters). Prefer concrete types when external APIs dictate specific representations.
 - **Minimal dependencies**: Keep the dependency surface small and cryptography-focused. Propose new packages via issues before adding them.
 
+## Panic Behavior
+
+The library uses panics for **programmer errors** that indicate misconfiguration, not for runtime failures. Callers should treat panics as fatal bugs to fix, not conditions to recover from in production.
+
+| Condition | Example | Rationale |
+|-----------|---------|-----------|
+| Invalid group ID | `ecc.Group(99).Base()` | Unknown groups cannot produce valid elements. |
+| Empty DST | `g.HashToGroup(data, nil)` | RFC 9380 requires non-empty domain separation. |
+| Mismatched groups | `p256Element.Add(p384Element)` | Cross-group arithmetic is undefined. |
+| Nil adapter input | Internal adapters receiving `nil` | Catches upstream bugs early in development. |
+| Entropy failure | `crypto/rand.Read` returns error | Unrecoverable; continuing would compromise security. |
+
+Runtime errors (malformed encodings, JSON mismatches) return `error` values instead. See [secure_design.md §5](secure_design.md#5-residual-risks-and-assumptions) for threat model implications.
+
 ## Testing and Automation
 
 - **Table-driven tests** exercise all supported groups for consistent semantics (e.g., `tests/groups_test.go`).
 - **Test vectors** from RFC 9380 validate encode/decode symmetry, hash-to-curve mappings, and identity handling across backends (`tests/h2c/`, `tests/encoding_test.go`).
 - **Fuzzers and fixtures** validate encode/decode behaviour (`tests/fuzz_test.go`, helpers in `debug/`).
-- **Rich CI workflows** with strict linting and security rules run on every commit. Before opening a PR, make sure `make -C .github/ lint vuln test fuzz` passes locally, and that coverage does not decrease (`make -C .github/ cover`).
+- **Rich CI workflows** with strict linting and security rules run on every commit. Before opening a PR, run the validation suite described in [CONTRIBUTING.md §5](../.github/CONTRIBUTING.md#5-quality-checks).
 - **Coverage expectations**: Maintain or improve existing coverage. Highlight meaningful gaps in PR descriptions if they cannot be addressed immediately.
 
 ## Extending the Library

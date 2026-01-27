@@ -9,13 +9,13 @@ This project publishes Go modules following Semantic Versioning. Releases are co
    - Open or update an issue/PR describing notable changes.
 
 2. **Update documentation**
-   - Add release notes to [CHANGELOG.md](../.github/CHANGELOG.md) under a new version heading.
+   - Add release notes to [CHANGELOG.md](../CHANGELOG.md) under a new version heading.
+   - Move entries from `[Unreleased]` to the new version section.
    - Verify README snippets and policy docs still apply.
 
 3. **Run validation locally**
-   ```bash
-   make -C .github lint vuln test cover fuzz
-   ```
+   
+   Run the validation suite as described in [CONTRIBUTING.md §5](../.github/CONTRIBUTING.md#5-quality-checks).
 
 4. **Tag the release**
    ```bash
