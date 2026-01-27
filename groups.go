@@ -73,7 +73,8 @@ func (g Group) Available() bool {
 // MakeDST returns a domain separation tag in the form of <app>-V<version>-CS<id>-<hash-to-curve-ID>.
 func (g Group) MakeDST(app string, version uint8) []byte {
 	p := g.get()
-	out := make([]byte, 0, 6+len(app)+2+2+len(p.Ciphersuite())) // effective content in the fmt, app length, version, id, ciphersuite length
+	// preallocate: effective content in the fmt, app length, version, id, ciphersuite length
+	out := make([]byte, 0, 6+len(app)+2+2+len(p.Ciphersuite()))
 
 	return fmt.Appendf(out, dstfmt, app, version, g, p.Ciphersuite())
 }

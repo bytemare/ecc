@@ -54,13 +54,13 @@ All operations occur in-memory. There's no persistent state or network I/O.
 
 The library uses panics for **programmer errors** that indicate misconfiguration, not for runtime failures. Callers should treat panics as fatal bugs to fix, not conditions to recover from in production.
 
-| Condition | Example | Rationale |
-|-----------|---------|-----------|
-| Invalid group ID | `ecc.Group(99).Base()` | Unknown groups cannot produce valid elements. |
-| Empty DST | `g.HashToGroup(data, nil)` | RFC 9380 requires non-empty domain separation. |
-| Mismatched groups | `p256Element.Add(p384Element)` | Cross-group arithmetic is undefined. |
-| Nil adapter input | Internal adapters receiving `nil` | Catches upstream bugs early in development. |
-| Entropy failure | `crypto/rand.Read` returns error | Unrecoverable; continuing would compromise security. |
+| Condition         | Example                           | Rationale                                            |
+|-------------------|-----------------------------------|------------------------------------------------------|
+| Invalid group ID  | `ecc.Group(99).Base()`            | Unknown groups cannot produce valid elements.        |
+| Empty DST         | `g.HashToGroup(data, nil)`        | RFC 9380 requires non-empty domain separation.       |
+| Mismatched groups | `p256Element.Add(p384Element)`    | Cross-group arithmetic is undefined.                 |
+| Nil adapter input | Internal adapters receiving `nil` | Catches upstream bugs early in development.          |
+| Entropy failure   | `crypto/rand.Read` returns error  | Unrecoverable; continuing would compromise security. |
 
 Runtime errors (malformed encodings, JSON mismatches) return `error` values instead. See [secure_design.md §5](secure_design.md#5-residual-risks-and-assumptions) for threat model implications.
 
