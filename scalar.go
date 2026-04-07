@@ -179,6 +179,16 @@ func (s *Scalar) Decode(data []byte) error {
 	return nil
 }
 
+// DecodeWithReduction sets s to x modulo the group order. If x is nil or
+// not of the correct input length, DecodeWithReduction returns an error.
+func (s *Scalar) DecodeWithReduction(x []byte) error {
+	if err := s.Scalar.DecodeWithReduction(x); err != nil {
+		return errors.Join(ErrDecodeScalar, err)
+	}
+
+	return nil
+}
+
 // Hex returns the fixed-sized hexadecimal encoding of s.
 func (s *Scalar) Hex() string {
 	return s.Scalar.Hex()

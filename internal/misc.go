@@ -47,6 +47,9 @@ var (
 
 	// ErrUInt64TooBig indicates that the scalar is higher than the allowed values for uint64.
 	ErrUInt64TooBig = errors.New("scalar is too big to be uint64")
+
+	// ErrParamInvalidInputLength indicates the input length is invalid.
+	ErrParamInvalidInputLength = errors.New("invalid input length")
 )
 
 // WrongGroupError returns an error indicating a group mismatch.
@@ -81,7 +84,7 @@ type Decoder interface {
 // RandomBytes returns random bytes of length len (wrapper for crypto/rand).
 func RandomBytes(length int) []byte {
 	random := make([]byte, length)
-	_, _ = cryptorand.Read(random) //nolint:errcheck // crypto/rand.Read will panic if it fails.
+	_, _ = cryptorand.Read(random)
 
 	return random
 }

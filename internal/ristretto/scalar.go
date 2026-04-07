@@ -160,20 +160,20 @@ func getMSByte(in []byte) int {
 	return msb
 }
 
-// Pow sets s to s**scalar modulo the group order, and returns s. If scalar is nil, it returns 1.
-func (s *Scalar) Pow(scalar internal.Scalar) internal.Scalar {
+// Pow sets s to s**x modulo the group order, and returns s. If x is nil, it returns 1.
+func (s *Scalar) Pow(x internal.Scalar) internal.Scalar {
 	s1 := s.copy()
 	s2 := s.copy()
 	s2.square()
 
-	bytes := assert(scalar).Encode()
+	bytes := assert(x).Encode()
 	msbyte := getMSByte(bytes)
 	msbit := getMSBit(bytes[msbyte])
 
 	// First round over the most significant byte
 	b := bytes[msbyte]
 	for j := msbit - 1; j >= 0; j-- {
-		bit := b & byte(1<<byte(j))
+		bit := b & byte(1<<byte(j)) //nolint:gosec // j is constrained to [0;7]
 		if bit == 0 {
 			s2.multiply(s1)
 			s1.square()
@@ -197,7 +197,7 @@ func (s *Scalar) Pow(scalar internal.Scalar) internal.Scalar {
 		}
 	}
 
-	if scalar.IsZero() {
+	if x.IsZero() {
 		s1.One()
 	} else {
 		s2.One()
@@ -308,9 +308,24 @@ func (s *Scalar) Encode() []byte {
 	return s.scalar.Bytes()
 }
 
-// Decode sets the receiver to a decoding of the input data, and returns an error on failure.
-func (s *Scalar) Decode(in []byte) error {
-	return s.decodeScalar(in)
+// Decode sets s to a big-endian byte decoding of x.
+// If x is not a canonical encoding of s, Decode returns an error.
+func (s *Scalar) Decode(x []byte) error {
+	return s.decodeScalar(x)
+}
+
+// DecodeWithReduction sets s to x modulo the group order. If x is nil or
+// not of the correct input length, DecodeWithReduction returns an error.
+func (s *Scalar) DecodeWithReduction(x []byte) error {
+	if len(x) != inputLength {
+		return internal.ErrParamInvalidInputLength
+	}
+
+	if _, err := s.scalar.SetUniformBytes(x); err != nil {
+		return fmt.Errorf("%w", err)
+	}
+
+	return nil
 }
 
 // Hex returns the fixed-sized hexadecimal encoding of s.

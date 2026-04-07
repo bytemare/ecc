@@ -15,6 +15,7 @@ import (
 	"errors"
 	"math"
 	"math/big"
+	"math/rand"
 	"slices"
 	"testing"
 
@@ -24,6 +25,8 @@ import (
 	"github.com/bytemare/ecc/internal/nist"
 	"github.com/bytemare/ecc/internal/ristretto"
 	"github.com/bytemare/ecc/internal/secp256k1"
+
+	libsecp256k1 "github.com/bytemare/secp256k1"
 )
 
 func TestScalar_Group(t *testing.T) {
@@ -213,6 +216,316 @@ func TestScalar_EncodedLength(t *testing.T) {
 				group.scalarLength,
 				encodedScalar,
 			)
+		}
+	})
+}
+
+func decodeWithReductionInputLength(g ecc.Group) int {
+	switch g {
+	case ecc.Ristretto255Sha512, ecc.Edwards25519Sha512, ecc.P521Sha512:
+		return 64
+	default:
+		return g.ScalarLength()
+	}
+}
+
+func isLittleEndianScalarGroup(g ecc.Group) bool {
+	switch g {
+	case ecc.Ristretto255Sha512, ecc.Edwards25519Sha512:
+		return true
+	default:
+		return false
+	}
+}
+
+func reductionOrder(g ecc.Group) *big.Int {
+	order := slices.Clone(g.Order())
+	if g == ecc.Ristretto255Sha512 {
+		slices.Reverse(order)
+	}
+
+	return new(big.Int).SetBytes(order)
+}
+
+func encodeReductionInput(g ecc.Group, value *big.Int) []byte {
+	input := make([]byte, decodeWithReductionInputLength(g))
+	value.FillBytes(input)
+
+	if isLittleEndianScalarGroup(g) {
+		slices.Reverse(input)
+	}
+
+	return input
+}
+
+func expectedReducedScalar(t *testing.T, g ecc.Group, input []byte) *ecc.Scalar {
+	t.Helper()
+
+	s := g.NewScalar()
+
+	if g == ecc.P521Sha512 {
+		encoded := make([]byte, g.ScalarLength())
+		copy(encoded[len(encoded)-len(input):], input)
+
+		if err := s.Decode(encoded); err != nil {
+			t.Fatal(err)
+		}
+
+		return s
+	}
+
+	buf := slices.Clone(input)
+	if isLittleEndianScalarGroup(g) {
+		slices.Reverse(buf)
+	}
+
+	value := new(big.Int).SetBytes(buf)
+	value.Mod(value, reductionOrder(g))
+
+	encoded := make([]byte, g.ScalarLength())
+	value.FillBytes(encoded)
+	if isLittleEndianScalarGroup(g) {
+		slices.Reverse(encoded)
+	}
+
+	if err := s.Decode(encoded); err != nil {
+		t.Fatal(err)
+	}
+
+	return s
+}
+
+func TestScalar_DecodeWithReduction_InvalidInputLength(t *testing.T) {
+	testAllGroups(t, func(group *testGroup) {
+		g := group.group
+		inputLength := decodeWithReductionInputLength(g)
+		expectedError := internal.ErrParamInvalidInputLength
+		if g == ecc.Secp256k1Sha256 {
+			expectedError = libsecp256k1.ErrParamInvalidInputLength
+		}
+
+		cases := []struct {
+			name  string
+			input []byte
+		}{
+			{name: "nil", input: nil},
+			{name: "empty", input: []byte{}},
+			{name: "short", input: make([]byte, inputLength-1)},
+			{name: "long", input: make([]byte, inputLength+1)},
+		}
+
+		if g == ecc.P521Sha512 {
+			cases = append(cases, struct {
+				name  string
+				input []byte
+			}{
+				name:  "canonical-length",
+				input: make([]byte, g.ScalarLength()),
+			})
+		}
+
+		for _, tc := range cases {
+			t.Run(tc.name, func(t *testing.T) {
+				err := g.NewScalar().DecodeWithReduction(tc.input)
+				if err == nil {
+					t.Fatal("expected error on invalid reduction input length")
+				}
+
+				if !errors.Is(err, ecc.ErrDecodeScalar) {
+					t.Fatalf("expected wrapped scalar decoding error, got %v", err)
+				}
+
+				if !errors.Is(err, expectedError) {
+					t.Fatalf("expected invalid input length, got %v", err)
+				}
+			})
+		}
+	})
+}
+
+func TestScalar_DecodeWithReduction_Edges(t *testing.T) {
+	testAllGroups(t, func(group *testGroup) {
+		g := group.group
+		order := reductionOrder(g)
+
+		type testCase struct {
+			canonicalErr error
+			name         string
+			input        []byte
+		}
+
+		cases := []testCase{
+			{name: "zero", input: make([]byte, decodeWithReductionInputLength(g))},
+			{name: "one", input: encodeReductionInput(g, big.NewInt(1))},
+		}
+
+		if g == ecc.P521Sha512 {
+			topBitSet := make([]byte, decodeWithReductionInputLength(g))
+			topBitSet[0] = 0x80
+
+			cases = append(cases,
+				testCase{name: "top-bit-set", input: topBitSet},
+				testCase{name: "all-ff", input: bytes.Repeat([]byte{0xff}, decodeWithReductionInputLength(g))},
+			)
+		} else {
+			canonicalErr := internal.ErrParamScalarInvalidEncoding
+			if isLittleEndianScalarGroup(g) {
+				canonicalErr = nil
+			}
+
+			cases = append(cases,
+				testCase{
+					name:  "order-minus-one",
+					input: encodeReductionInput(g, new(big.Int).Sub(order, big.NewInt(1))),
+				},
+				testCase{
+					name:         "order",
+					input:        encodeReductionInput(g, new(big.Int).Set(order)),
+					canonicalErr: canonicalErr,
+				},
+				testCase{
+					name:         "order-plus-one",
+					input:        encodeReductionInput(g, new(big.Int).Add(new(big.Int).Set(order), big.NewInt(1))),
+					canonicalErr: canonicalErr,
+				},
+				testCase{
+					name:         "all-ff",
+					input:        bytes.Repeat([]byte{0xff}, decodeWithReductionInputLength(g)),
+					canonicalErr: canonicalErr,
+				},
+			)
+		}
+
+		for _, tc := range cases {
+			t.Run(tc.name, func(t *testing.T) {
+				got := g.NewScalar().One()
+				if err := got.DecodeWithReduction(tc.input); err != nil {
+					t.Fatal(err)
+				}
+
+				want := expectedReducedScalar(t, g, tc.input)
+				if !got.Equal(want) {
+					t.Fatalf("unexpected reduction for %s: want %s, got %s", tc.name, want.Hex(), got.Hex())
+				}
+
+				if g == ecc.P521Sha512 {
+					padded := make([]byte, g.ScalarLength())
+					copy(padded[len(padded)-len(tc.input):], tc.input)
+
+					expected := g.NewScalar()
+					if err := expected.Decode(padded); err != nil {
+						t.Fatal(err)
+					}
+
+					if !got.Equal(expected) {
+						t.Fatalf(
+							"P-521 reduction must match zero-padded canonical decode: want %s, got %s",
+							expected.Hex(),
+							got.Hex(),
+						)
+					}
+				}
+
+				if tc.canonicalErr != nil {
+					expectErrors(t,
+						func() error { return g.NewScalar().Decode(tc.input) },
+						ecc.ErrDecodeScalar,
+						tc.canonicalErr,
+					)
+				}
+			})
+		}
+	})
+}
+
+func TestScalar_DecodeWithReduction_Properties(t *testing.T) {
+	const iterations = 16
+
+	testAllGroups(t, func(group *testGroup) {
+		g := group.group
+		inputLength := decodeWithReductionInputLength(g)
+		rng := rand.New(rand.NewSource(int64(g)))
+
+		for range iterations {
+			input := make([]byte, inputLength)
+			if _, err := rng.Read(input); err != nil {
+				t.Fatal(err)
+			}
+
+			want := expectedReducedScalar(t, g, input)
+			got := g.NewScalar()
+			if err := got.DecodeWithReduction(input); err != nil {
+				t.Fatal(err)
+			}
+
+			if !got.Equal(want) {
+				t.Fatalf(
+					"unexpected reduction: want %s, got %s (input %s)",
+					want.Hex(),
+					got.Hex(),
+					hex.EncodeToString(input),
+				)
+			}
+
+			roundTrip := g.NewScalar()
+			if err := roundTrip.Decode(got.Encode()); err != nil {
+				t.Fatal(err)
+			}
+
+			if !roundTrip.Equal(got) {
+				t.Fatalf("canonical round-trip mismatch: want %s, got %s", got.Hex(), roundTrip.Hex())
+			}
+
+			if g == ecc.P521Sha512 {
+				padded := make([]byte, g.ScalarLength())
+				copy(padded[len(padded)-len(input):], input)
+
+				paddedScalar := g.NewScalar()
+				if err := paddedScalar.Decode(padded); err != nil {
+					t.Fatal(err)
+				}
+
+				if !got.Equal(paddedScalar) {
+					t.Fatalf(
+						"P-521 reduction must match zero-padded canonical decode: want %s, got %s",
+						paddedScalar.Hex(),
+						got.Hex(),
+					)
+				}
+			}
+		}
+
+		if g == ecc.P521Sha512 {
+			return
+		}
+
+		order := reductionOrder(g)
+		maxInput := new(big.Int).Lsh(big.NewInt(1), uint(8*inputLength))
+		limit := new(big.Int).Sub(maxInput, order)
+		buf := make([]byte, len(limit.Bytes()))
+
+		for range iterations {
+			if _, err := rng.Read(buf); err != nil {
+				t.Fatal(err)
+			}
+
+			x := new(big.Int).SetBytes(buf)
+			x.Mod(x, limit)
+
+			left := g.NewScalar()
+			if err := left.DecodeWithReduction(encodeReductionInput(g, x)); err != nil {
+				t.Fatal(err)
+			}
+
+			right := g.NewScalar()
+			x.Add(x, order)
+			if err := right.DecodeWithReduction(encodeReductionInput(g, x)); err != nil {
+				t.Fatal(err)
+			}
+
+			if !left.Equal(right) {
+				t.Fatalf("expected x and x+order to reduce equally: %s != %s", left.Hex(), right.Hex())
+			}
 		}
 	})
 }

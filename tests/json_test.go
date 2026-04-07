@@ -48,11 +48,9 @@ func testJSONBaddie(t *testing.T, baddie jsonTesterBaddie) {
 		t.Fatal("expected an error but got none")
 	}
 
-	var (
-		syntaxErr *json.SyntaxError
-		typeErr   *json.UnmarshalTypeError
-	)
-	if errors.As(err, &syntaxErr) || errors.As(err, &typeErr) {
+	var typeErr *json.UnmarshalTypeError
+
+	if _, ok := errors.AsType[*json.SyntaxError](err); ok || errors.As(err, &typeErr) {
 		if !strings.Contains(err.Error(), baddie.expectedError.Error()) {
 			t.Log(string(data))
 			t.Fatalf("expected error %q, got %q", baddie.expectedError, err)

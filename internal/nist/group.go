@@ -222,6 +222,5 @@ func initP521() {
 }
 
 func setScalarField[Point nistECPoint[Point]](g *Group[Point], order string) {
-	prime := field.String2Int(order)
-	g.scalarField = field.NewField(&prime)
+	g.scalarField = field.NewField(new(field.String2Int(order)))
 }
