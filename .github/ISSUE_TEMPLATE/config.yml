@@ -1,5 +1,0 @@
-blank_issues_enabled: false
-contact_links:
-  - name: Security Reports
-    url: https://github.com/bytemare/ecc/security/advisories
-    about: Please use GitHub Security Advisories for privately reporting vulnerabilities.

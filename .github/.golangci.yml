@@ -170,12 +170,16 @@ linters:
         - '33'
         - '48'
         - '64'
+        - '66'
       ignored-functions:
         - 'nist.setMapping'
         - 'big.NewInt'
         - 'hash2curve.HashToFieldXMD'
     nlreturn:
       block-size: 2
+    nolintlint:
+      require-explanation: true
+      require-specific: true
     prealloc:
       simple: false
       range-loops: true

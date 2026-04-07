@@ -24,13 +24,13 @@ permissions: { }
 
 jobs:
   Release:
-    uses: bytemare/slsa/.github/workflows/slsa.yaml@6b6b2069083d1ce7d0b2b61636f5bf6c784b5b43
+    uses: bytemare/slsa/.github/workflows/slsa.yaml@fc44a03683e7f42b18d57a45981d3d95c18037ef
     with:
+      workflow_ref: fc44a03683e7f42b18d57a45981d3d95c18037ef
       dry_run: ${{ github.event_name == 'pull_request' }}
       create_release: ${{ github.event_name != 'pull_request' }}
       sign_blobs: true
-      extended_metadata: false # Set to true for forensics mode
-      workflow_ref: 6b6b2069083d1ce7d0b2b61636f5bf6c784b5b43
+      extended_metadata: true # Set to true for forensics mode
     permissions:
       contents: write               # create/update release & upload assets
       id-token: write               # OIDC for attestations/provenance
