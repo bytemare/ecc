@@ -64,7 +64,7 @@ func (g Group) HashToScalar(input, dst []byte) internal.Scalar {
 
 	s, err := ristretto255.NewScalar().SetUniformBytes(uniform)
 	if err != nil {
-		// Uniform bytes come from hashing to the required fixed length.
+		// Unreachable: uniform is of the required fixed length.
 		// A failure indicates a regression in ristretto255.
 		panic(err)
 	}
@@ -79,7 +79,7 @@ func (g Group) HashToGroup(input, dst []byte) internal.Element {
 
 	e, err := ristretto255.NewIdentityElement().SetUniformBytes(uniform)
 	if err != nil {
-		// Uniform bytes come from hashing to the required fixed length.
+		// Unreachable: uniform is of the required fixed length.
 		// A failure indicates a regression in ristretto255.
 		panic(err)
 	}

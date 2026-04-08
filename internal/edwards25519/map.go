@@ -83,8 +83,8 @@ func HashToEdwards25519Field(input, dst []byte) *edwards25519.Scalar {
 
 	s, err := edwards25519.NewScalar().SetUniformBytes(result)
 	if err != nil {
-		// Uniform bytes come from hashing to the required fixed length.
-		// A failure indicates a regression in edwards25519.
+		// Unreachable: result is of the required fixed length.
+		// A failure indicates a regression in ristretto255.edwards25519.
 		panic(err)
 	}
 
