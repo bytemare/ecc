@@ -80,7 +80,7 @@ jobs:
       # ---- High assurance gate ORT ----
       ort_config_repository: https://github.com/oss-review-toolkit/ort-config # optional: defaults to https://github.com/oss-review-toolkit/ort-config
       ort_config_revision: "34c5d317e44e86505d0d257f2c1076deda35d9df"     # optional: pin for a specific policy version of the policy repository
-      ort_config_source: ".github/ort" # optional: additional repo specific configuration directory to use. If you have an .ort.yml config file put it there.
+      #ort_config_source: ".github/ort" # optional: additional repo specific configuration directory to use. If you have an .ort.yml config file put it there.
       ort_config_target: "~/.ort/config" # optional: target directory to stage the policy configuration to, defaults to ~/.ort/config, because that's where ORT looks for it
       ort_fail_on: "violations"   # fail mode: violations|issues|never
       ort_cli_args: "-P ort.analyzer.enabledPackageManagers=GoMod"
