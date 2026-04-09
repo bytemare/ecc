@@ -10,7 +10,6 @@ package ecc_test
 
 import (
 	"encoding/hex"
-	"fmt"
 	"testing"
 
 	"github.com/bytemare/ecc"
@@ -38,26 +37,17 @@ func TestNonAvailability(t *testing.T) {
 		t.Errorf(consideredAvailableFmt, d)
 	}
 
-	if err := testPanic("decaf availability", internal.ErrInvalidGroup,
-		func() { _ = d.String() }); err != nil {
-		t.Fatal(err)
-	}
+	expectPanic(t, "decaf availability", internal.ErrInvalidGroup, func() { _ = d.String() })
 
 	oob = ecc.Secp256k1Sha256 + 1
 	if oob.Available() {
 		t.Errorf(consideredAvailableFmt, oob)
 	}
 
-	if err := testPanic("oob availability", internal.ErrInvalidGroup,
-		func() { _ = oob.String() }); err != nil {
-		t.Fatal(err)
-	}
+	expectPanic(t, "oob availability", internal.ErrInvalidGroup, func() { _ = oob.String() })
 
 	oob++
-	if err := testPanic("oob availability", internal.ErrInvalidGroup,
-		func() { _ = oob.String() }); err != nil {
-		t.Fatal(err)
-	}
+	expectPanic(t, "oob availability", internal.ErrInvalidGroup, func() { _ = oob.String() })
 }
 
 func TestGroup_Base(t *testing.T) {
@@ -151,7 +141,11 @@ func TestHashToScalar(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		sv := decodeScalar(t, group.group, group.hashToCurve.hashToScalar)
 
-		s := group.group.HashToScalar(group.hashToCurve.input, group.hashToCurve.dst)
+		s, err := group.group.HashToScalar(group.hashToCurve.input, group.hashToCurve.dst)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		if !s.Equal(sv) {
 			t.Error(errExpectedEquality)
 		}
@@ -163,18 +157,16 @@ func TestHashToScalar_NoDST(t *testing.T) {
 		data := []byte("input data")
 
 		// Nil DST
-		if err := testPanic("nil dst", errZeroLenDST, func() {
-			_ = group.group.HashToScalar(data, nil)
-		}); err != nil {
-			t.Error(fmt.Errorf(errWrapGroup, errNoPanic, err))
-		}
+		expectErrors(t, func() error {
+			_, err := group.group.HashToScalar(data, nil)
+			return err
+		}, ecc.ErrZeroLengthDST)
 
 		// Zero length DST
-		if err := testPanic("zero-length dst", errZeroLenDST, func() {
-			_ = group.group.HashToScalar(data, []byte{})
-		}); err != nil {
-			t.Error(fmt.Errorf(errWrapGroup, errNoPanic, err))
-		}
+		expectErrors(t, func() error {
+			_, err := group.group.HashToScalar(data, []byte{})
+			return err
+		}, ecc.ErrZeroLengthDST)
 	})
 }
 
@@ -182,7 +174,11 @@ func TestHashToGroup(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		ev := decodeElement(t, group.group, group.hashToCurve.hashToGroup)
 
-		e := group.group.HashToGroup(group.hashToCurve.input, group.hashToCurve.dst)
+		e, err := group.group.HashToGroup(group.hashToCurve.input, group.hashToCurve.dst)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		if !e.Equal(ev) {
 			t.Error(errExpectedEquality)
 		}
@@ -194,18 +190,34 @@ func TestHashToGroup_NoDST(t *testing.T) {
 		data := []byte("input data")
 
 		// Nil DST
-		if err := testPanic("nil dst", errZeroLenDST, func() {
-			_ = group.group.HashToGroup(data, nil)
-		}); err != nil {
-			t.Error(fmt.Errorf(errWrapGroup, errNoPanic, err))
-		}
+		expectErrors(t, func() error {
+			_, err := group.group.HashToGroup(data, nil)
+			return err
+		}, ecc.ErrZeroLengthDST)
 
 		// Zero length DST
-		if err := testPanic("zero-length dst", errZeroLenDST, func() {
-			_ = group.group.HashToGroup(data, []byte{})
-		}); err != nil {
-			t.Error(fmt.Errorf(errWrapGroup, errNoPanic, err))
-		}
+		expectErrors(t, func() error {
+			_, err := group.group.HashToGroup(data, []byte{})
+			return err
+		}, ecc.ErrZeroLengthDST)
+	})
+}
+
+func TestEncodeToGroup_NoDST(t *testing.T) {
+	testAllGroups(t, func(group *testGroup) {
+		data := []byte("input data")
+
+		// Nil DST
+		expectErrors(t, func() error {
+			_, err := group.group.EncodeToGroup(data, nil)
+			return err
+		}, ecc.ErrZeroLengthDST)
+
+		// Zero length DST
+		expectErrors(t, func() error {
+			_, err := group.group.EncodeToGroup(data, []byte{})
+			return err
+		}, ecc.ErrZeroLengthDST)
 	})
 }
 

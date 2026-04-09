@@ -9,11 +9,15 @@
 package ecc
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/bytemare/ecc/internal"
 )
+
+// ErrDecodeScalar is returned when a scalar could not be decoded.
+var ErrDecodeScalar = errors.New("decoding scalar")
 
 // Scalar represents a scalar in the prime-order group.
 type Scalar struct {
@@ -169,7 +173,17 @@ func (s *Scalar) Encode() []byte {
 // Decode sets the receiver to a decoding of the input data, and returns an error on failure.
 func (s *Scalar) Decode(data []byte) error {
 	if err := s.Scalar.Decode(data); err != nil {
-		return fmt.Errorf("scalar Decode: %w", err)
+		return errors.Join(ErrDecodeScalar, err)
+	}
+
+	return nil
+}
+
+// DecodeWithReduction sets s to x modulo the group order. If x is nil or
+// not of the correct input length, DecodeWithReduction returns an error.
+func (s *Scalar) DecodeWithReduction(x []byte) error {
+	if err := s.Scalar.DecodeWithReduction(x); err != nil {
+		return errors.Join(ErrDecodeScalar, err)
 	}
 
 	return nil
@@ -183,21 +197,43 @@ func (s *Scalar) Hex() string {
 // DecodeHex sets s to the decoding of the hex encoded scalar.
 func (s *Scalar) DecodeHex(h string) error {
 	if err := s.Scalar.DecodeHex(h); err != nil {
-		return fmt.Errorf("scalar DecodeHex: %w", err)
+		return errors.Join(ErrDecodeScalar, err)
 	}
 
 	return nil
 }
 
 // MarshalJSON marshals the scalar into valid JSON.
+// Example output: {"group":7,"data":"02ab..."}.
 func (s *Scalar) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf("%q", s.Hex())), nil
+	out, err := json.Marshal(jsonScalar{Group: s.Group(), Data: s.Hex()})
+	if err != nil {
+		// json.Marshal on this struct only fails if the standard library encoder breaks,
+		// but we still wrap the error for completeness.
+		return nil, fmt.Errorf("could not marshal scalar: %w", err)
+	}
+
+	return out, nil
 }
 
-// UnmarshalJSON unmarshals the input into the scalar.
+// UnmarshalJSON parser the input into the scalar from a JSON object {group,data}.
 func (s *Scalar) UnmarshalJSON(data []byte) error {
-	j := strings.ReplaceAll(string(data), "\"", "")
-	return s.DecodeHex(j)
+	var js jsonScalar
+
+	if err := json.Unmarshal(data, &js); err != nil {
+		return errors.Join(ErrDecodeScalar, err)
+	}
+
+	// May seem redundant, but guards against a nil group or wrongly initialized element.
+	if !js.Group.Available() {
+		return errors.Join(ErrDecodeScalar, internal.ErrInvalidGroup)
+	}
+
+	if js.Group != s.Group() {
+		return errors.Join(ErrDecodeScalar, internal.ErrInvalidGroup)
+	}
+
+	return s.DecodeHex(js.Data)
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface.
@@ -207,9 +243,11 @@ func (s *Scalar) MarshalBinary() ([]byte, error) {
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
 func (s *Scalar) UnmarshalBinary(data []byte) error {
-	if err := s.Scalar.Decode(data); err != nil {
-		return fmt.Errorf("scalar UnmarshalBinary: %w", err)
-	}
+	return s.Decode(data)
+}
 
-	return nil
+// jsonScalar is a typed JSON wrapper to (un)marshal a scalar with its group.
+type jsonScalar struct {
+	Data  string `json:"data"`
+	Group Group  `json:"group"`
 }

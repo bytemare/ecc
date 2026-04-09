@@ -6,7 +6,6 @@
 // LICENSE file in the root directory of this source tree or at
 // https://spdx.org/licenses/MIT.html
 
-// Package internal defines simple and abstract APIs to group Elements and Scalars.
 package internal
 
 // Scalar interface abstracts common operations on scalars in a prime-order Group.
@@ -67,8 +66,13 @@ type Scalar interface {
 	// Encode returns the compressed byte encoding of the scalar.
 	Encode() []byte
 
-	// Decode sets the receiver to a decoding of the input data, and returns an error on failure.
+	// Decode sets s to a big-endian byte decoding of x.
+	// If x is not a canonical encoding of s, Decode returns an error.
 	Decode(data []byte) error
+
+	// DecodeWithReduction sets s to x modulo the group order. If x is nil or
+	// not of the correct input length, DecodeWithReduction returns an error.
+	DecodeWithReduction(x []byte) error
 
 	// Hex returns the fixed-sized hexadecimal encoding of s.
 	Hex() string

@@ -6,7 +6,7 @@
 // LICENSE file in the root directory of this source tree or at
 // https://spdx.org/licenses/MIT.html
 
-// Package ristretto allows simple and abstracted operations in the Ristretto255 group.
+// Package ristretto provides simple and abstracted operations in the Ristretto255 group.
 package ristretto
 
 import (
@@ -44,12 +44,12 @@ func (g Group) NewScalar() internal.Scalar {
 
 // NewElement returns the identity element (point at infinity).
 func (g Group) NewElement() internal.Element {
-	return &Element{*ristretto255.NewElement()}
+	return &Element{*ristretto255.NewIdentityElement()}
 }
 
 // Base returns group's base point a.k.a. canonical generator.
 func (g Group) Base() internal.Element {
-	return &Element{*ristretto255.NewElement().Base()}
+	return &Element{*ristretto255.NewGeneratorElement()}
 }
 
 // HashFunc returns the RFC9380 associated hash function of the group.
@@ -61,7 +61,15 @@ func (g Group) HashFunc() crypto.Hash {
 // The DST must not be empty or nil, and is recommended to be longer than 16 bytes.
 func (g Group) HashToScalar(input, dst []byte) internal.Scalar {
 	uniform := hash2curve.ExpandXMD(crypto.SHA512, input, dst, inputLength)
-	return &Scalar{*ristretto255.NewScalar().FromUniformBytes(uniform)}
+
+	s, err := ristretto255.NewScalar().SetUniformBytes(uniform)
+	if err != nil {
+		// Unreachable: uniform is of the required fixed length.
+		// A failure indicates a regression in ristretto255.
+		panic(err)
+	}
+
+	return &Scalar{scalar: *s}
 }
 
 // HashToGroup returns a safe mapping of the arbitrary input to an Element in the Group.
@@ -69,7 +77,14 @@ func (g Group) HashToScalar(input, dst []byte) internal.Scalar {
 func (g Group) HashToGroup(input, dst []byte) internal.Element {
 	uniform := hash2curve.ExpandXMD(crypto.SHA512, input, dst, inputLength)
 
-	return &Element{*ristretto255.NewElement().FromUniformBytes(uniform)}
+	e, err := ristretto255.NewIdentityElement().SetUniformBytes(uniform)
+	if err != nil {
+		// Unreachable: uniform is of the required fixed length.
+		// A failure indicates a regression in ristretto255.
+		panic(err)
+	}
+
+	return &Element{element: *e}
 }
 
 // EncodeToGroup returns a non-uniform mapping of the arbitrary input to an Element in the Group.

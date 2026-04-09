@@ -1,0 +1,6 @@
+* text=auto eol=lf
+
+*.go diff=go
+
+# Treat documentation as docs in GitHub language stats
+docs/** linguist-documentation

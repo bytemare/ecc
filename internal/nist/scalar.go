@@ -14,6 +14,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"reflect"
 
 	"github.com/bytemare/ecc/internal"
 	"github.com/bytemare/ecc/internal/field"
@@ -44,6 +45,7 @@ func (s *Scalar) Group() byte {
 	case p521.scalarField:
 		return IdentifierP521
 	default:
+		// Indicates the scalar was initialised with an unexpected field instance.
 		panic("invalid field order for scalar" + s.field.Order().String())
 	}
 }
@@ -227,9 +229,10 @@ func (s *Scalar) Encode() []byte {
 	return s.scalar.FillBytes(scalar)
 }
 
-// Decode sets the receiver to a decoding of the input data, and returns an error on failure.
-func (s *Scalar) Decode(in []byte) error {
-	switch len(in) {
+// Decode sets s to a big-endian byte decoding of x.
+// If x is not a canonical encoding of s, Decode returns an error.
+func (s *Scalar) Decode(x []byte) error {
+	switch len(x) {
 	case 0:
 		return internal.ErrParamNilScalar
 	case s.field.ByteLen():
@@ -242,13 +245,44 @@ func (s *Scalar) Decode(in []byte) error {
 	// 	if tmp.Sign() < 0 {
 	//		return internal.ErrParamNegScalar
 	//	}
-	tmp := new(big.Int).SetBytes(in)
+	tmp := new(big.Int).SetBytes(x)
 
 	if s.field.Order().Cmp(tmp) <= 0 {
 		return internal.ErrParamScalarInvalidEncoding
 	}
 
 	s.scalar.Set(tmp)
+
+	return nil
+}
+
+// DecodeWithReduction sets s to x modulo the group order. If x is nil or
+// not of the correct input length, DecodeWithReduction returns an error.
+func (s *Scalar) DecodeWithReduction(x []byte) error {
+	if len(x) == 0 {
+		return internal.ErrParamInvalidInputLength
+	}
+
+	group := s.Group()
+	expectedLength := s.field.ByteLen()
+
+	if group == IdentifierP521 {
+		expectedLength = 64 // We expect hash outputs of 64 bytes for P-521.
+	}
+
+	if len(x) != expectedLength {
+		return internal.ErrParamInvalidInputLength
+	}
+
+	if s.Group() == IdentifierP521 {
+		// 64 bytes = 512 bits < 521 bits, so we only need to pad, but not reduce.
+		padded := make([]byte, 66)
+		copy(padded[2:], x)
+		s.scalar.SetBytes(padded)
+	} else {
+		s.scalar.SetBytes(x)
+		s.field.Mod(&s.scalar)
+	}
 
 	return nil
 }
@@ -269,14 +303,14 @@ func (s *Scalar) DecodeHex(h string) error {
 }
 
 func (s *Scalar) assert(scalar internal.Scalar) *Scalar {
-	_sc, ok := scalar.(*Scalar)
+	sc, ok := scalar.(*Scalar)
 	if !ok {
-		panic(internal.ErrCastScalar)
+		panic(internal.WrongGroupError(reflect.TypeFor[*Scalar](), reflect.TypeOf(scalar)))
 	}
 
-	if !s.field.IsEqual(_sc.field) {
+	if !s.field.IsEqual(sc.field) {
 		panic(internal.ErrWrongField)
 	}
 
-	return _sc
+	return sc
 }

@@ -13,6 +13,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"reflect"
 
 	"github.com/bytemare/ecc/internal"
 
@@ -30,8 +31,8 @@ var (
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16,
 	}
 	orderBytes = []byte{
-		237, 211, 245, 92, 26, 99, 18, 88, 214, 156, 247, 162, 222, 249, 222, 20,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16,
+		16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		20, 222, 249, 222, 162, 247, 156, 214, 88, 18, 99, 26, 92, 245, 211, 237,
 	}
 )
 
@@ -65,7 +66,7 @@ type Scalar struct {
 func assert(scalar internal.Scalar) *Scalar {
 	sc, ok := scalar.(*Scalar)
 	if !ok {
-		panic(internal.ErrCastScalar)
+		panic(internal.WrongGroupError(reflect.TypeFor[*Scalar](), reflect.TypeOf(scalar)))
 	}
 
 	return &Scalar{*ed.NewScalar().Set(&sc.scalar)}
@@ -168,20 +169,20 @@ func getMSByte(in []byte) int {
 	return msb
 }
 
-// Pow sets s to s**scalar modulo the group order, and returns s. If scalar is nil, it returns 1.
-func (s *Scalar) Pow(scalar internal.Scalar) internal.Scalar {
+// Pow sets s to s**x modulo the group order, and returns s. If x is nil, it returns 1.
+func (s *Scalar) Pow(x internal.Scalar) internal.Scalar {
 	s1 := s.copy()
 	s2 := s.copy()
 	s2.square()
 
-	bytes := assert(scalar).scalar.Bytes()
+	bytes := assert(x).scalar.Bytes()
 	msbyte := getMSByte(bytes)
 	msbit := getMSBit(bytes[msbyte])
 
 	// First round over the most significant byte
 	b := bytes[msbyte]
 	for j := msbit - 1; j >= 0; j-- {
-		bit := b & byte(1<<byte(j))
+		bit := b & byte(1<<byte(j)) //nolint:gosec // j is constrained to [0;7]
 		if bit == 0 {
 			s2.multiply(s1)
 			s1.square()
@@ -205,7 +206,7 @@ func (s *Scalar) Pow(scalar internal.Scalar) internal.Scalar {
 		}
 	}
 
-	if scalar.IsZero() {
+	if x.IsZero() {
 		s1.One()
 	} else {
 		s2.One()
@@ -281,7 +282,8 @@ func (s *Scalar) SetUInt64(i uint64) internal.Scalar {
 	binary.LittleEndian.PutUint64(encoded, i)
 
 	if err := s.decodeScalar(encoded); err != nil {
-		// This cannot happen, since any uint64 is smaller than the order.
+		// This cannot happen under normal operation: every uint64 fits inside the
+		// group order, so decoding would only fail if upstream regressed.
 		panic(fmt.Sprintf("unexpected decoding of uint64 scalar: %s", err))
 	}
 
@@ -315,9 +317,24 @@ func (s *Scalar) Encode() []byte {
 	return s.scalar.Bytes()
 }
 
-// Decode sets the receiver to a decoding of the input data, and returns an error on failure.
-func (s *Scalar) Decode(in []byte) error {
-	return s.decodeScalar(in)
+// Decode sets s to a big-endian byte decoding of x.
+// If x is not a canonical encoding of s, Decode returns an error.
+func (s *Scalar) Decode(x []byte) error {
+	return s.decodeScalar(x)
+}
+
+// DecodeWithReduction sets s to x modulo the group order. If x is nil or
+// not of the correct input length, DecodeWithReduction returns an error.
+func (s *Scalar) DecodeWithReduction(x []byte) error {
+	if len(x) != inputLength {
+		return internal.ErrParamInvalidInputLength
+	}
+
+	if _, err := s.scalar.SetUniformBytes(x); err != nil {
+		return fmt.Errorf("%w", err)
+	}
+
+	return nil
 }
 
 // Hex returns the fixed-sized hexadecimal encoding of s.

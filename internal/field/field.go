@@ -62,7 +62,8 @@ func NewField(prime *big.Int) Field {
 func (f Field) Random(res *big.Int) *big.Int {
 	tmp, err := rand.Int(rand.Reader, f.order)
 	if err != nil {
-		// We can as well not panic and try again in a loop
+		// The standard library now aborts on entropy failure, so this panic is defensive
+		// and practically unrecoverable but kept for completeness.
 		panic(fmt.Errorf("unexpected error in generating random bytes : %w", err))
 	}
 

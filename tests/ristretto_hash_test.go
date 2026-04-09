@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/bytemare/ecc"
 	"github.com/bytemare/ecc/internal/ristretto"
 )
 
@@ -80,5 +81,25 @@ func TestRistretto_HashToGroup(t *testing.T) {
 				)
 			}
 		})
+	}
+}
+
+func TestHashEncodeToRistretto_MatchesHash(t *testing.T) {
+	g := ecc.Ristretto255Sha512
+	input := []byte("ristretto data")
+	dst := []byte("ristretto data dst")
+
+	hashed, err := g.HashToGroup(input, dst)
+	if err != nil {
+		t.Fatalf("HashToGroup error: %v", err)
+	}
+
+	encoded, err := g.EncodeToGroup(input, dst)
+	if err != nil {
+		t.Fatalf("EncodeToGroup error: %v", err)
+	}
+
+	if !encoded.Equal(hashed) {
+		t.Fatal("EncodeToGroup diverges from HashToGroup for Ristretto")
 	}
 }

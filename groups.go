@@ -58,9 +58,11 @@ const (
 )
 
 var (
-	once          [maxID - 1]sync.Once
-	groups        [maxID - 1]internal.Group
-	errZeroLenDST = errors.New("zero-length DST")
+	// ErrZeroLengthDST is returned when a group could not be decoded.
+	ErrZeroLengthDST = errors.New("the provided domain separation tag is empty")
+
+	once   [maxID - 1]sync.Once
+	groups [maxID - 1]internal.Group
 )
 
 // Available reports whether the given Group is linked into the binary.
@@ -68,11 +70,13 @@ func (g Group) Available() bool {
 	return 0 < g && g < maxID && g != decaf448Shake256
 }
 
-// MakeDST builds a domain separation tag in the form of <app>-V<version>-CS<id>-<hash-to-curve-ID>,
-// and returns no error.
+// MakeDST returns a domain separation tag in the form of <app>-V<version>-CS<id>-<hash-to-curve-ID>.
 func (g Group) MakeDST(app string, version uint8) []byte {
 	p := g.get()
-	return []byte(fmt.Sprintf(dstfmt, app, version, g, p.Ciphersuite()))
+	// preallocate: effective content in the fmt, app length, version, id, ciphersuite length
+	out := make([]byte, 0, 6+len(app)+2+2+len(p.Ciphersuite()))
+
+	return fmt.Appendf(out, dstfmt, app, version, g, p.Ciphersuite())
 }
 
 // String returns the hash-to-curve string identifier of the ciphersuite.
@@ -95,12 +99,15 @@ func (g Group) Base() *Element {
 	return newPoint(g.get().Base())
 }
 
-func checkDST(dst []byte) {
+func checkDST(dst []byte) error {
+	// placeholder for warning about short DST.
 	if len(dst) < recommendedMinLength {
 		if len(dst) == minLength {
-			panic(errZeroLenDST)
+			return ErrZeroLengthDST
 		}
 	}
+
+	return nil
 }
 
 // HashFunc returns the RFC9380 associated hash function of the group.
@@ -110,23 +117,32 @@ func (g Group) HashFunc() crypto.Hash {
 
 // HashToScalar returns a safe mapping of the arbitrary input to a Scalar.
 // The DST must not be empty or nil, and is recommended to be longer than 16 bytes.
-func (g Group) HashToScalar(input, dst []byte) *Scalar {
-	checkDST(dst)
-	return newScalar(g.get().HashToScalar(input, dst))
+func (g Group) HashToScalar(input, dst []byte) (*Scalar, error) {
+	if err := checkDST(dst); err != nil {
+		return nil, err
+	}
+
+	return newScalar(g.get().HashToScalar(input, dst)), nil
 }
 
 // HashToGroup returns a safe mapping of the arbitrary input to an Element in the Group.
 // The DST must not be empty or nil, and is recommended to be longer than 16 bytes.
-func (g Group) HashToGroup(input, dst []byte) *Element {
-	checkDST(dst)
-	return newPoint(g.get().HashToGroup(input, dst))
+func (g Group) HashToGroup(input, dst []byte) (*Element, error) {
+	if err := checkDST(dst); err != nil {
+		return nil, err
+	}
+
+	return newPoint(g.get().HashToGroup(input, dst)), nil
 }
 
 // EncodeToGroup returns a non-uniform mapping of the arbitrary input to an Element in the Group.
 // The DST must not be empty or nil, and is recommended to be longer than 16 bytes.
-func (g Group) EncodeToGroup(input, dst []byte) *Element {
-	checkDST(dst)
-	return newPoint(g.get().EncodeToGroup(input, dst))
+func (g Group) EncodeToGroup(input, dst []byte) (*Element, error) {
+	if err := checkDST(dst); err != nil {
+		return nil, err
+	}
+
+	return newPoint(g.get().EncodeToGroup(input, dst)), nil
 }
 
 // ScalarLength returns the byte size of an encoded scalar.
@@ -173,6 +189,7 @@ func (g Group) init() {
 	case Secp256k1Sha256:
 		g.initGroup(secp256k1.New)
 	default:
+		// Should be unreachable: g.get() validates the identifier before calling init.
 		panic("group not recognized")
 	}
 }

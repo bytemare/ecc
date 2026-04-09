@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+title: ecc
+message: If you use this software, please cite it using the metadata from this file.
+type: software
+abstract: High-level Go wrappers for multiple elliptic-curve groups with uniform hash-to-curve interfaces.
+repository-code: https://github.com/bytemare/ecc
+license: MIT
+keywords:
+  - elliptic-curve
+  - cryptography
+  - go
+  - hash-to-curve
+authors:
+  - family-names: Bourdrez
+    given-names: Daniel

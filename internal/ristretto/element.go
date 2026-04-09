@@ -6,17 +6,20 @@
 // LICENSE file in the root directory of this source tree or at
 // https://spdx.org/licenses/MIT.html
 
-// Package ristretto allows simple and abstracted operations in the Ristretto255 group.
 package ristretto
 
 import (
 	"encoding/hex"
-	"fmt"
+	"errors"
+	"reflect"
 
 	"github.com/gtank/ristretto255"
 
 	"github.com/bytemare/ecc/internal"
 )
+
+// ErrDecodeElement is returned when decoding an invalid byte slice.
+var ErrDecodeElement = errors.New("invalid ristretto255 element encoding")
 
 // Element implements the Element interface for the Ristretto255 group element.
 type Element struct {
@@ -30,7 +33,7 @@ func checkElement(element internal.Element) *Element {
 
 	ec, ok := element.(*Element)
 	if !ok {
-		panic(internal.ErrCastElement)
+		panic(internal.WrongGroupError(reflect.TypeFor[*Element](), reflect.TypeOf(element)))
 	}
 
 	return ec
@@ -43,13 +46,13 @@ func (e *Element) Group() byte {
 
 // Base sets the element to the group's base point a.k.a. canonical generator.
 func (e *Element) Base() internal.Element {
-	e.element.Base()
+	e.element.Set(ristretto255.NewGeneratorElement())
 	return e
 }
 
 // Identity sets the element to the point at infinity of the Group's underlying curve.
 func (e *Element) Identity() internal.Element {
-	e.element.Zero()
+	e.element.Set(ristretto255.NewIdentityElement())
 	return e
 }
 
@@ -84,12 +87,18 @@ func (e *Element) Subtract(element internal.Element) internal.Element {
 // Multiply sets the receiver to the scalar multiplication of the receiver with the given Scalar, and returns it.
 func (e *Element) Multiply(scalar internal.Scalar) internal.Element {
 	if scalar == nil {
-		e.element.Zero()
+		e.element.Set(ristretto255.NewIdentityElement())
 		return e
 	}
 
 	sc := assert(scalar)
-	e.element.ScalarMult(&sc.scalar, &e.element)
+
+	// Optimization for multiplying the base point.
+	if e.element.Equal(ristretto255.NewGeneratorElement()) == 1 {
+		e.element.ScalarBaseMult(&sc.scalar)
+	} else {
+		e.element.ScalarMult(&sc.scalar, &e.element)
+	}
 
 	return e
 }
@@ -102,7 +111,7 @@ func (e *Element) Equal(element internal.Element) int {
 
 // IsIdentity returns whether the Element is the point at infinity of the Group's underlying curve.
 func (e *Element) IsIdentity() bool {
-	id := ristretto255.NewElement().Zero()
+	id := ristretto255.NewIdentityElement()
 	return e.element.Equal(id) == 1
 }
 
@@ -114,7 +123,7 @@ func (e *Element) Set(element internal.Element) internal.Element {
 
 	ec, ok := element.(*Element)
 	if !ok {
-		panic(internal.ErrCastElement)
+		panic(internal.WrongGroupError(reflect.TypeFor[*Element](), reflect.TypeOf(element)))
 	}
 
 	*e = *ec
@@ -124,8 +133,9 @@ func (e *Element) Set(element internal.Element) internal.Element {
 
 // Copy returns a copy of the receiver.
 func (e *Element) Copy() internal.Element {
-	n := ristretto255.NewElement()
-	if err := n.Decode(e.element.Encode(nil)); err != nil {
+	n, err := ristretto255.NewIdentityElement().SetCanonicalBytes(e.element.Bytes())
+	if err != nil {
+		// Canonical encodings are guaranteed. A failure indicates a regression in ristretto255.
 		panic(err)
 	}
 
@@ -134,7 +144,7 @@ func (e *Element) Copy() internal.Element {
 
 // Encode returns the compressed byte encoding of the element.
 func (e *Element) Encode() []byte {
-	return e.element.Encode(nil)
+	return e.element.Bytes()
 }
 
 // XCoordinate returns the encoded x coordinate of the element, which is the same as Encode().
@@ -142,32 +152,23 @@ func (e *Element) XCoordinate() []byte {
 	return e.Encode()
 }
 
-func decodeElement(element []byte) (*ristretto255.Element, error) {
-	if len(element) == 0 {
-		return nil, internal.ErrParamInvalidPointEncoding
-	}
-
-	e := ristretto255.NewElement()
-	if err := e.Decode(element); err != nil {
-		return nil, fmt.Errorf("%w", err)
-	}
-
-	return e, nil
-}
-
 // Decode sets the receiver to a decoding of the input data, and returns an error on failure.
 func (e *Element) Decode(data []byte) error {
-	element, err := decodeElement(data)
+	if len(data) == 0 {
+		return ErrDecodeElement
+	}
+
+	res, err := ristretto255.NewIdentityElement().SetCanonicalBytes(data)
 	if err != nil {
-		return err
+		return ErrDecodeElement
 	}
 
-	// superfluous identity check
-	if element.Equal(ristretto255.NewElement().Zero()) == 1 {
-		return fmt.Errorf("invalid Ristretto encoding: %w", internal.ErrIdentity)
+	// superfluous identity check // todo: check if it's covered
+	if res.Equal(ristretto255.NewIdentityElement()) == 1 {
+		return errors.Join(ErrDecodeElement, internal.ErrIdentity)
 	}
 
-	e.element = *element
+	e.element = *res
 
 	return nil
 }
@@ -181,7 +182,7 @@ func (e *Element) Hex() string {
 func (e *Element) DecodeHex(h string) error {
 	b, err := hex.DecodeString(h)
 	if err != nil {
-		return fmt.Errorf("%w", err)
+		return errors.Join(ErrDecodeElement, err)
 	}
 
 	return e.Decode(b)

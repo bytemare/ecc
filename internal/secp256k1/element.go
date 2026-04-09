@@ -2,7 +2,7 @@
 //
 // Copyright (C)2020-2024 Daniel Bourdrez. All Rights Reserved.
 //
-// This source code is licensed under the MIT license found in theg
+// This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree or at
 // https://spdx.org/licenses/MIT.html
 
@@ -11,14 +11,15 @@ package secp256k1
 import (
 	"encoding/hex"
 	"errors"
-	"fmt"
+	"reflect"
 
 	"github.com/bytemare/secp256k1"
 
 	"github.com/bytemare/ecc/internal"
 )
 
-var errIdentityEncoding = errors.New("invalid secp256k1 encoding: invalid point encoding")
+// ErrDecodeElement is returned when decoding an invalid byte slice to an element failed.
+var ErrDecodeElement = errors.New("invalid secp256k1 element encoding")
 
 // Element implements the Element interface for the Secp256k1 group element.
 type Element struct {
@@ -37,7 +38,7 @@ func assertElement(element internal.Element) *Element {
 
 	ec, ok := element.(*Element)
 	if !ok {
-		panic(internal.ErrCastElement)
+		panic(internal.WrongGroupError(reflect.TypeFor[*Element](), reflect.TypeOf(element)))
 	}
 
 	return ec
@@ -90,6 +91,11 @@ func (e *Element) Subtract(element internal.Element) internal.Element {
 
 // Multiply sets the receiver to the scalar multiplication of the receiver with the given Scalar, and returns it.
 func (e *Element) Multiply(scalar internal.Scalar) internal.Element {
+	if scalar == nil {
+		e.Identity()
+		return e
+	}
+
 	s := assert(scalar)
 	e.element.Multiply(s.scalar)
 
@@ -144,11 +150,11 @@ func (e *Element) XCoordinate() []byte {
 // Decode sets the receiver to a decoding of the input data, and returns an error on failure.
 func (e *Element) Decode(data []byte) error {
 	if len(data) != 33 {
-		return errIdentityEncoding
+		return ErrDecodeElement
 	}
 
 	if err := e.element.Decode(data); err != nil {
-		return fmt.Errorf("invalid secp256k1 encoding: %w", err)
+		return ErrDecodeElement
 	}
 
 	return nil
@@ -163,7 +169,7 @@ func (e *Element) Hex() string {
 func (e *Element) DecodeHex(h string) error {
 	b, err := hex.DecodeString(h)
 	if err != nil {
-		return fmt.Errorf("%w", err)
+		return errors.Join(ErrDecodeElement, err)
 	}
 
 	return e.Decode(b)

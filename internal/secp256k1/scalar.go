@@ -11,6 +11,7 @@ package secp256k1
 import (
 	"encoding/binary"
 	"fmt"
+	"reflect"
 
 	"github.com/bytemare/secp256k1"
 
@@ -29,7 +30,7 @@ func newScalar() *Scalar {
 func assert(scalar internal.Scalar) *Scalar {
 	sc, ok := scalar.(*Scalar)
 	if !ok {
-		panic(internal.ErrCastScalar)
+		panic(internal.WrongGroupError(reflect.TypeFor[*Scalar](), reflect.TypeOf(scalar)))
 	}
 
 	return sc
@@ -190,13 +191,24 @@ func (s *Scalar) Encode() []byte {
 	return s.scalar.Encode()
 }
 
-// Decode sets the receiver to a decoding of the input data, and returns an error on failure.
-func (s *Scalar) Decode(in []byte) error {
-	if err := s.scalar.Decode(in); err != nil {
+// Decode sets s to a big-endian byte decoding of x.
+// If x is not a canonical encoding of s, Decode returns an error.
+func (s *Scalar) Decode(x []byte) error {
+	if err := s.scalar.Decode(x); err != nil {
 		if err.Error() == "scalar too big" {
 			return internal.ErrParamScalarInvalidEncoding
 		}
 
+		return fmt.Errorf("%w", err)
+	}
+
+	return nil
+}
+
+// DecodeWithReduction sets s to x modulo the group order. If x is nil or
+// not of the correct input length, DecodeWithReduction returns an error.
+func (s *Scalar) DecodeWithReduction(x []byte) error {
+	if err := s.scalar.DecodeWithReduction(x); err != nil {
 		return fmt.Errorf("%w", err)
 	}
 

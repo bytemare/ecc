@@ -9,11 +9,15 @@
 package ecc
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/bytemare/ecc/internal"
 )
+
+// ErrDecodeElement is returned when an element could not be decoded.
+var ErrDecodeElement = errors.New("decoding element")
 
 // Element represents an element on the curve of the prime-order group.
 type Element struct {
@@ -131,7 +135,7 @@ func (e *Element) XCoordinate() []byte {
 // Decode sets the receiver to a decoding of the input data, and returns an error on failure.
 func (e *Element) Decode(data []byte) error {
 	if err := e.Element.Decode(data); err != nil {
-		return fmt.Errorf("element Decode: %w", err)
+		return errors.Join(ErrDecodeElement, err)
 	}
 
 	return nil
@@ -145,7 +149,7 @@ func (e *Element) Hex() string {
 // DecodeHex sets e to the decoding of the hex encoded element.
 func (e *Element) DecodeHex(h string) error {
 	if err := e.Element.DecodeHex(h); err != nil {
-		return fmt.Errorf("element DecodeHex: %w", err)
+		return errors.Join(ErrDecodeElement, err)
 	}
 
 	return nil
@@ -153,13 +157,34 @@ func (e *Element) DecodeHex(h string) error {
 
 // MarshalJSON marshals the element into valid JSON.
 func (e *Element) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf("%q", e.Hex())), nil
+	out, err := json.Marshal(jsonElement{Group: e.Group(), Data: e.Hex()})
+	if err != nil {
+		// json.Marshal on this struct only fails if the standard library encoder breaks,
+		// but we keep the wrapped error for completeness.
+		return nil, fmt.Errorf("could not marshal element: %w", err)
+	}
+
+	return out, nil
 }
 
 // UnmarshalJSON unmarshals the input into the element.
 func (e *Element) UnmarshalJSON(data []byte) error {
-	j := strings.ReplaceAll(string(data), "\"", "")
-	return e.DecodeHex(j)
+	var je jsonElement
+
+	if err := json.Unmarshal(data, &je); err != nil {
+		return errors.Join(ErrDecodeElement, err)
+	}
+
+	// May seem redundant, but guards against a nil group or wrongly initialized element.
+	if !je.Group.Available() {
+		return errors.Join(ErrDecodeElement, internal.ErrInvalidGroup)
+	}
+
+	if je.Group != e.Group() {
+		return errors.Join(ErrDecodeElement, internal.ErrInvalidGroup)
+	}
+
+	return e.DecodeHex(je.Data)
 }
 
 // MarshalBinary returns the compressed byte encoding of the element.
@@ -169,9 +194,11 @@ func (e *Element) MarshalBinary() ([]byte, error) {
 
 // UnmarshalBinary sets e to the decoding of the byte encoded element.
 func (e *Element) UnmarshalBinary(data []byte) error {
-	if err := e.Element.Decode(data); err != nil {
-		return fmt.Errorf("element UnmarshalBinary: %w", err)
-	}
+	return e.Decode(data)
+}
 
-	return nil
+// jsonElement is a typed JSON wrapper to (un)marshal an element with its group.
+type jsonElement struct {
+	Data  string `json:"data"`
+	Group Group  `json:"group"`
 }
