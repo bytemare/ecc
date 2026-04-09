@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 For releases prior to this changelog, see [GitHub Releases](https://github.com/bytemare/ecc/releases).
 
+## [Unreleased]
+
 ## v0.10.0
 
 ### Releases
