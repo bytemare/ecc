@@ -83,11 +83,11 @@ vectors:
 cover:
 	@echo "Generating Go coverage..."
 	@report_path="$(GO_COVERAGE_REPORT_PATH)" && \
-    	    cover_pkg="$(GO_COVERAGE_PACKAGE)" && \
-    	    test_target="$(GO_COVERAGE_TEST_TARGET)" && \
-    	    mkdir -p "$$(dirname "$$report_path")" && \
-	    go test -v -race -covermode=atomic -coverpkg="$$cover_pkg" -coverprofile="$$report_path" $$test_target && \
-	    echo "Go coverage report generated: $$report_path"
+	cover_pkg="$(GO_COVERAGE_PACKAGE)" && \
+	test_target="$(GO_COVERAGE_TEST_TARGET)" && \
+	mkdir -p "$$(dirname "$$report_path")" && \
+	go test -v -race -covermode=atomic -coverpkg="$$cover_pkg" -coverprofile="$$report_path" $$test_target && \
+	echo "Go coverage report generated: $$report_path"
 
 # Fuzzing
 # Local fuzzing: keep a repo-local cache so short runs accumulate useful inputs
@@ -197,8 +197,8 @@ run-fuzz:
 bench:
 	@echo "Running benchmarks ..."
 	@bench_regex=$${BENCH:-'.*Suites'}; \
-	 bench_time=$${BENCHTIME:-5s}; \
-	 go test -run '^$$' -bench "$$bench_regex" -benchmem -benchtime "$$bench_time" ../tests
+	bench_time=$${BENCHTIME:-5s}; \
+	go test -run '^$$' -bench "$$bench_regex" -benchmem -benchtime "$$bench_time" ../tests
 
 # Releases
 .PHONY: release
