@@ -13,9 +13,9 @@ import (
 	"crypto"
 	"slices"
 
-	"github.com/bytemare/hash2curve"
 	"github.com/gtank/ristretto255"
 
+	"github.com/bytemare/ecc/hash2curve"
 	"github.com/bytemare/ecc/internal"
 )
 
