@@ -56,20 +56,35 @@ func (g Group) HashFunc() crypto.Hash {
 
 // HashToScalar returns a safe mapping of the arbitrary input to a Scalar.
 // The DST must not be empty or nil, and is recommended to be longer than 16 bytes.
-func (g Group) HashToScalar(input, dst []byte) internal.Scalar {
-	return &Scalar{*HashToEdwards25519Field(input, dst)}
+func (g Group) HashToScalar(input, dst []byte) (internal.Scalar, error) {
+	s, err := HashToEdwards25519Field(input, dst)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Scalar{*s}, nil
 }
 
 // HashToGroup returns a safe mapping of the arbitrary input to an Element in the Group.
 // The DST must not be empty or nil, and is recommended to be longer than 16 bytes.
-func (g Group) HashToGroup(input, dst []byte) internal.Element {
-	return &Element{*HashToEdwards25519(input, dst)}
+func (g Group) HashToGroup(input, dst []byte) (internal.Element, error) {
+	e, err := HashToEdwards25519(input, dst)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Element{*e}, nil
 }
 
 // EncodeToGroup returns a non-uniform mapping of the arbitrary input to an Element in the Group.
 // The DST must not be empty or nil, and is recommended to be longer than 16 bytes.
-func (g Group) EncodeToGroup(input, dst []byte) internal.Element {
-	return &Element{*EncodeToEdwards25519(input, dst)}
+func (g Group) EncodeToGroup(input, dst []byte) (internal.Element, error) {
+	e, err := EncodeToEdwards25519(input, dst)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Element{*e}, nil
 }
 
 // Ciphersuite returns the hash-to-curve ciphersuite identifier.

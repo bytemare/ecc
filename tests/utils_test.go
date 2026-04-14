@@ -24,6 +24,18 @@ var (
 	errNoPanicMessage = errors.New("panic but no message")
 )
 
+// serde represents any type with serde capabilities.
+type serde interface {
+	Encode() []byte
+	Decode(data []byte) error
+	Hex() string
+	DecodeHex(h string) error
+	MarshalJSON() ([]byte, error)
+	UnmarshalJSON(data []byte) error
+	encoding.BinaryMarshaler
+	encoding.BinaryUnmarshaler
+}
+
 // hasPanic runs f and recovers from a panic if any occurred, and returns whether it did and the panic message as an
 // error.
 func hasPanic(f func()) (has bool, err error) {

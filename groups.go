@@ -14,7 +14,6 @@ package ecc
 
 import (
 	"crypto"
-	"errors"
 	"fmt"
 	"sync"
 
@@ -58,9 +57,6 @@ const (
 )
 
 var (
-	// ErrZeroLengthDST is returned when a group could not be decoded.
-	ErrZeroLengthDST = errors.New("the provided domain separation tag is empty")
-
 	once   [maxID - 1]sync.Once
 	groups [maxID - 1]internal.Group
 )
@@ -99,17 +95,6 @@ func (g Group) Base() *Element {
 	return newPoint(g.get().Base())
 }
 
-func checkDST(dst []byte) error {
-	// placeholder for warning about short DST.
-	if len(dst) < recommendedMinLength {
-		if len(dst) == minLength {
-			return ErrZeroLengthDST
-		}
-	}
-
-	return nil
-}
-
 // HashFunc returns the RFC9380 associated hash function of the group.
 func (g Group) HashFunc() crypto.Hash {
 	return g.get().HashFunc()
@@ -118,31 +103,34 @@ func (g Group) HashFunc() crypto.Hash {
 // HashToScalar returns a safe mapping of the arbitrary input to a Scalar.
 // The DST must not be empty or nil, and is recommended to be longer than 16 bytes.
 func (g Group) HashToScalar(input, dst []byte) (*Scalar, error) {
-	if err := checkDST(dst); err != nil {
+	s, err := g.get().HashToScalar(input, dst)
+	if err != nil {
 		return nil, err
 	}
 
-	return newScalar(g.get().HashToScalar(input, dst)), nil
+	return newScalar(s), nil
 }
 
 // HashToGroup returns a safe mapping of the arbitrary input to an Element in the Group.
 // The DST must not be empty or nil, and is recommended to be longer than 16 bytes.
 func (g Group) HashToGroup(input, dst []byte) (*Element, error) {
-	if err := checkDST(dst); err != nil {
+	p, err := g.get().HashToGroup(input, dst)
+	if err != nil {
 		return nil, err
 	}
 
-	return newPoint(g.get().HashToGroup(input, dst)), nil
+	return newPoint(p), nil
 }
 
 // EncodeToGroup returns a non-uniform mapping of the arbitrary input to an Element in the Group.
 // The DST must not be empty or nil, and is recommended to be longer than 16 bytes.
 func (g Group) EncodeToGroup(input, dst []byte) (*Element, error) {
-	if err := checkDST(dst); err != nil {
+	p, err := g.get().EncodeToGroup(input, dst)
+	if err != nil {
 		return nil, err
 	}
 
-	return newPoint(g.get().EncodeToGroup(input, dst)), nil
+	return newPoint(p), nil
 }
 
 // ScalarLength returns the byte size of an encoded scalar.

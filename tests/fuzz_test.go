@@ -9,10 +9,15 @@
 package ecc_test
 
 import (
+	"crypto"
 	"errors"
+	"math"
 	"testing"
 
+	"github.com/bytemare/hash"
+
 	"github.com/bytemare/ecc"
+	"github.com/bytemare/ecc/hash2curve"
 	"github.com/bytemare/ecc/internal"
 )
 
@@ -90,5 +95,67 @@ func FuzzElement(f *testing.F) {
 		}); panicked && !errors.Is(err, internal.ErrInvalidGroup) {
 			t.Fatal(err)
 		}
+	})
+}
+
+func fuzzTestSkipInput(t *testing.T, dst []byte, length uint) {
+	if len(dst) == 0 {
+		t.Skip("zero length dst")
+	}
+
+	if length < 0 {
+		t.Skip("requested length is negative")
+	}
+
+	if length > math.MaxUint16 {
+		t.Skip("requested length too big")
+	}
+}
+
+func fuzzTestSkipXMDInput(t *testing.T, h uint, dst []byte, length uint) {
+	fuzzTestSkipInput(t, dst, length)
+
+	hid := crypto.Hash(h)
+
+	if !hid.Available() {
+		t.Skip("unavailable hash")
+	}
+
+	if len(dst) > math.MaxUint8 {
+		t.Skip("dst too long")
+	}
+
+	if length > uint(255*hid.Size()) {
+		t.Skip("requested length too big")
+	}
+}
+
+func FuzzExpandXMD(f *testing.F) {
+	f.Fuzz(func(t *testing.T, h uint, input, dst []byte, length uint) {
+		fuzzTestSkipXMDInput(t, h, dst, length)
+		_, _ = hash2curve.ExpandXMD(crypto.Hash(h), input, dst, length)
+	})
+}
+
+func fuzzTestSkipXOFInput(t *testing.T, h uint, dst []byte, length uint) {
+	fuzzTestSkipInput(t, dst, length)
+
+	if hash.Hash(h) < hash.SHAKE128 || hash.Hash(h) > hash.BLAKE2XS {
+		t.Skip()
+	}
+
+	if length < 32 {
+		t.Skip("length too small")
+	}
+
+	if !hash.Hash(h).Available() {
+		t.Skip()
+	}
+}
+
+func FuzzExpandXOF(f *testing.F) {
+	f.Fuzz(func(t *testing.T, h uint, input, dst []byte, length uint) {
+		fuzzTestSkipXOFInput(t, h, dst, length)
+		_, _ = hash2curve.ExpandXOF(hash.Hash(h).GetXOF(), input, dst, length)
 	})
 }

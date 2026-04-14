@@ -69,7 +69,7 @@ func assert(scalar internal.Scalar) *Scalar {
 		panic(internal.WrongGroupError(reflect.TypeFor[*Scalar](), reflect.TypeOf(scalar)))
 	}
 
-	return &Scalar{*ed.NewScalar().Set(&sc.scalar)}
+	return sc
 }
 
 // Group returns the group's Identifier.
@@ -237,7 +237,7 @@ func (s *Scalar) Equal(scalar internal.Scalar) int {
 // LessOrEqual returns 1 if s <= scalar and 0 otherwise.
 func (s *Scalar) LessOrEqual(scalar internal.Scalar) int {
 	sc := assert(scalar)
-	return internal.ConstantTimeLessOrEqBytes(s.Encode(), sc.Encode(), true)
+	return internal.ConstantTimeLessOrEqBytes(s.scalar.Bytes(), sc.scalar.Bytes(), true)
 }
 
 // IsZero returns whether the scalar is 0.

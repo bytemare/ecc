@@ -14,6 +14,7 @@ import (
 
 	"github.com/bytemare/secp256k1"
 
+	"github.com/bytemare/ecc/hash2curve"
 	"github.com/bytemare/ecc/internal"
 )
 
@@ -60,20 +61,35 @@ func (g Group) HashFunc() crypto.Hash {
 
 // HashToScalar returns a safe mapping of the arbitrary input to a Scalar.
 // The DST must not be empty or nil, and is recommended to be longer than 16 bytes.
-func (g Group) HashToScalar(input, dst []byte) internal.Scalar {
-	return &Scalar{scalar: secp256k1.HashToScalar(input, dst)}
+func (g Group) HashToScalar(input, dst []byte) (internal.Scalar, error) {
+	s, err := secp256k1.HashToScalar(input, dst)
+	if err != nil {
+		return nil, hash2curve.ErrZeroLengthDST
+	}
+
+	return &Scalar{scalar: s}, nil
 }
 
 // HashToGroup returns a safe mapping of the arbitrary input to an Element in the Group.
 // The DST must not be empty or nil, and is recommended to be longer than 16 bytes.
-func (g Group) HashToGroup(input, dst []byte) internal.Element {
-	return &Element{element: secp256k1.HashToGroup(input, dst)}
+func (g Group) HashToGroup(input, dst []byte) (internal.Element, error) {
+	e, err := secp256k1.HashToGroup(input, dst)
+	if err != nil {
+		return nil, hash2curve.ErrZeroLengthDST
+	}
+
+	return &Element{element: e}, nil
 }
 
 // EncodeToGroup returns a non-uniform mapping of the arbitrary input to an Element in the Group.
 // The DST must not be empty or nil, and is recommended to be longer than 16 bytes.
-func (g Group) EncodeToGroup(input, dst []byte) internal.Element {
-	return &Element{element: secp256k1.EncodeToGroup(input, dst)}
+func (g Group) EncodeToGroup(input, dst []byte) (internal.Element, error) {
+	e, err := secp256k1.EncodeToGroup(input, dst)
+	if err != nil {
+		return nil, hash2curve.ErrZeroLengthDST
+	}
+
+	return &Element{element: e}, nil
 }
 
 // Ciphersuite returns the hash-to-curve ciphersuite identifier.

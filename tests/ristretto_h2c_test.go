@@ -71,7 +71,10 @@ func TestRistretto_HashToGroup(t *testing.T) {
 				t.Fatalf("%d : %v", i, err)
 			}
 
-			e := ristretto.Group{}.HashToGroup(v.input, v.dst)
+			e, err := ristretto.Group{}.HashToGroup(v.input, v.dst)
+			if err != nil {
+				t.Fatalf("%d : %v", i, err)
+			}
 
 			if !bytes.Equal(e.Encode(), v.encodedElement) {
 				t.Fatalf(
@@ -79,6 +82,29 @@ func TestRistretto_HashToGroup(t *testing.T) {
 					hex.EncodeToString(v.encodedElement),
 					e.Hex(),
 				)
+			}
+		})
+	}
+}
+
+func TestRistretto_EncodeToGroup(t *testing.T) {
+	for i, test := range ristrettoH2gTests {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			v, err := test.decode()
+			if err != nil {
+				t.Fatalf("%d : %v", i, err)
+			}
+
+			e, err := ristretto.Group{}.EncodeToGroup(v.input, v.dst)
+			if err != nil {
+				t.Fatalf("%d : %v", i, err)
+			}
+
+			if !bytes.Equal(e.Encode(), v.encodedElement) {
+				t.Fatalf(
+					"Mappings do not match.\n\tExpected: %v\n\tActual: %v\n",
+					hex.EncodeToString(v.encodedElement),
+					hex.EncodeToString(e.Encode()))
 			}
 		})
 	}

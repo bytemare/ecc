@@ -34,40 +34,59 @@ func fe() *field.Element {
 }
 
 // HashToEdwards25519Field implements hash-to-scalar mapping modulo the order of Edwards25519 using input with dst.
-func HashToEdwards25519Field(input, dst []byte) *edwards25519.Scalar {
-	uniform := hash2curve.ExpandXMD(crypto.SHA512, input, dst, 48)
+func HashToEdwards25519Field(input, dst []byte) (*edwards25519.Scalar, error) {
+	var uniform [48]byte
+	if err := hash2curve.ExpandXMDTo(crypto.SHA512, uniform[:], input, dst); err != nil {
+		return nil, err
+	}
 
-	s, err := edwards25519.NewScalar().SetUniformBytes(expandAndReverse64(uniform))
+	var wide [64]byte
+	expandAndReverse64(&wide, uniform[:])
+
+	s, err := edwards25519.NewScalar().SetUniformBytes(wide[:])
 	if err != nil {
 		// Unreachable: result is of the required fixed length.
 		// A failure indicates a regression in ristretto255.edwards25519.
 		panic(err)
 	}
 
-	return s
+	return s, nil
 }
 
 // HashToEdwards25519 implements hash-to-curve mapping to Edwards25519 of input with dst.
-func HashToEdwards25519(input, dst []byte) *edwards25519.Point {
-	uniform := hash2curve.ExpandXMD(crypto.SHA512, input, dst, uint(2*1*48))
-	q0, _ := new(field.Element).SetWideBytes(expandAndReverse64(uniform[0:48])) //nolint:errcheck // always succeeds
-	q1, _ := new(field.Element).SetWideBytes(expandAndReverse64(uniform[48:]))  //nolint:errcheck // always succeeds
+func HashToEdwards25519(input, dst []byte) (*edwards25519.Point, error) {
+	var uniform [2 * 48]byte
+	if err := hash2curve.ExpandXMDTo(crypto.SHA512, uniform[:], input, dst); err != nil {
+		return nil, err
+	}
+
+	var u1, u2 [64]byte
+	expandAndReverse64(&u1, uniform[0:48])
+	expandAndReverse64(&u2, uniform[48:])
+	q0, _ := new(field.Element).SetWideBytes(u1[:]) //nolint:errcheck // always succeeds
+	q1, _ := new(field.Element).SetWideBytes(u2[:]) //nolint:errcheck // always succeeds
 	p0 := Elligator2Edwards(q0)
 	p1 := Elligator2Edwards(q1)
 	p0.Add(p0, p1)
 	p0.MultByCofactor(p0)
 
-	return p0
+	return p0, nil
 }
 
 // EncodeToEdwards25519 implements encode-to-curve mapping to Edwards25519 of input with dst.
-func EncodeToEdwards25519(input, dst []byte) *edwards25519.Point {
-	uniform := hash2curve.ExpandXMD(crypto.SHA512, input, dst, uint(1*1*48))
-	b, _ := new(field.Element).SetWideBytes(expandAndReverse64(uniform)) //nolint:errcheck // always succeeds
+func EncodeToEdwards25519(input, dst []byte) (*edwards25519.Point, error) {
+	var uniform [48]byte
+	if err := hash2curve.ExpandXMDTo(crypto.SHA512, uniform[:], input, dst); err != nil {
+		return nil, err
+	}
+
+	var u [64]byte
+	expandAndReverse64(&u, uniform[0:48])
+	b, _ := new(field.Element).SetWideBytes(u[:]) //nolint:errcheck // always succeeds
 	p0 := Elligator2Edwards(b)
 	p0.MultByCofactor(p0)
 
-	return p0
+	return p0, nil
 }
 
 // Elligator2Edwards maps the field element to a point on Edwards25519.
@@ -163,13 +182,10 @@ func MontgomeryUToEdwardsY(u *field.Element) *field.Element {
 	return u1.Multiply(u1, u2.Invert(u2))
 }
 
-// expandAndReverse64 returns the reverse of the input and pads with 0s to 64 bytes.
-func expandAndReverse64(in []byte) []byte {
-	// Pre-allocate 64-byte buffer for 0 padding and reverse directly into it.
-	result := make([]byte, 64)
-	for i := range 48 {
-		result[i] = in[47-i]
+// expandAndReverse64 writes the reversed input into out and pads the remaining bytes with 0s.
+func expandAndReverse64(out *[64]byte, in []byte) {
+	clear(out[:])
+	for i := range in {
+		out[i] = in[len(in)-1-i]
 	}
-
-	return result
 }

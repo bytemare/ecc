@@ -34,15 +34,41 @@ func BenchmarkPow(b *testing.B) {
 	})
 }
 
+func BenchmarkHashToScalar(b *testing.B) {
+	msg := make([]byte, 256)
+	dst := make([]byte, 10)
+	benchAll(b, func(b *testing.B, group *testGroup) {
+		b.SetBytes(int64(len(msg) + len(dst)))
+		b.ResetTimer()
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			_, _ = group.group.HashToScalar(msg, dst)
+		}
+	})
+}
+
 func BenchmarkHashToGroup(b *testing.B) {
 	msg := make([]byte, 256)
 	dst := make([]byte, 10)
 	benchAll(b, func(b *testing.B, group *testGroup) {
-		b.SetBytes(int64(len(msg)))
+		b.SetBytes(int64(len(msg) + len(dst)))
 		b.ResetTimer()
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
-			group.group.HashToGroup(msg, dst)
+			_, _ = group.group.HashToGroup(msg, dst)
+		}
+	})
+}
+
+func BenchmarkEncodeToGroup(b *testing.B) {
+	msg := make([]byte, 256)
+	dst := make([]byte, 10)
+	benchAll(b, func(b *testing.B, group *testGroup) {
+		b.SetBytes(int64(len(msg) + len(dst)))
+		b.ResetTimer()
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			_, _ = group.group.EncodeToGroup(msg, dst)
 		}
 	})
 }
@@ -78,6 +104,28 @@ func BenchmarkScalarMult(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			pub = pub.Multiply(priv)
+		}
+	})
+}
+
+func BenchmarkScalarEqual(b *testing.B) {
+	benchAll(b, func(b *testing.B, group *testGroup) {
+		left, _ := group.group.HashToScalar([]byte("benchmark left"), []byte("benchmark-dst-left"))
+		right, _ := group.group.HashToScalar([]byte("benchmark right"), []byte("benchmark-dst-right"))
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_ = left.Equal(right)
+		}
+	})
+}
+
+func BenchmarkScalarLessOrEqual(b *testing.B) {
+	benchAll(b, func(b *testing.B, group *testGroup) {
+		left, _ := group.group.HashToScalar([]byte("benchmark left"), []byte("benchmark-dst-left"))
+		right, _ := group.group.HashToScalar([]byte("benchmark right"), []byte("benchmark-dst-right"))
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_ = left.LessOrEqual(right)
 		}
 	})
 }

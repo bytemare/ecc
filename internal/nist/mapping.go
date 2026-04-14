@@ -8,32 +8,20 @@
 
 package nist
 
-import (
-	"crypto"
-	"math/big"
-)
+import "crypto"
 
 type mapping[point nistECPoint[point]] struct {
-	hashToScalar hashToScalar[point]
-	hashToCurve  hashToCurve[point]
-	mapToCurve   mapToCurve[point]
-	hash         crypto.Hash
+	hashToCurve func(input, dst []byte) (point, error)
+	mapToCurve  func(input, dst []byte) (point, error)
+	hash        crypto.Hash
 }
-
-type (
-	hashToScalar[point nistECPoint[point]] func(input, dst []byte) *big.Int
-	hashToCurve[point nistECPoint[point]]  func(input, dst []byte) point
-	mapToCurve[point nistECPoint[point]]   func(input, dst []byte) point
-)
 
 func (m *mapping[point]) setMapping(
 	hash crypto.Hash,
-	h2s hashToScalar[point],
-	h2c hashToCurve[point],
-	m2c mapToCurve[point],
+	h2c func(input, dst []byte) (point, error),
+	m2c func(input, dst []byte) (point, error),
 ) {
 	m.hash = hash
-	m.hashToScalar = h2s
 	m.hashToCurve = h2c
 	m.mapToCurve = m2c
 }

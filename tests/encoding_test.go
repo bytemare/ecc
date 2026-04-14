@@ -10,7 +10,6 @@ package ecc_test
 
 import (
 	"bytes"
-	"encoding"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -25,17 +24,6 @@ import (
 	"github.com/bytemare/ecc/internal/ristretto"
 	"github.com/bytemare/ecc/internal/secp256k1"
 )
-
-type serde interface {
-	Encode() []byte
-	Decode(data []byte) error
-	Hex() string
-	DecodeHex(h string) error
-	MarshalJSON() ([]byte, error)
-	UnmarshalJSON(data []byte) error
-	encoding.BinaryMarshaler
-	encoding.BinaryUnmarshaler
-}
 
 type (
 	byteEncoder    func() ([]byte, error)

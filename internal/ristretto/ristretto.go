@@ -59,37 +59,43 @@ func (g Group) HashFunc() crypto.Hash {
 
 // HashToScalar returns a safe mapping of the arbitrary input to a Scalar.
 // The DST must not be empty or nil, and is recommended to be longer than 16 bytes.
-func (g Group) HashToScalar(input, dst []byte) internal.Scalar {
-	uniform := hash2curve.ExpandXMD(crypto.SHA512, input, dst, inputLength)
+func (g Group) HashToScalar(input, dst []byte) (internal.Scalar, error) {
+	var uniform [inputLength]byte
+	if err := hash2curve.ExpandXMDTo(crypto.SHA512, uniform[:], input, dst); err != nil {
+		return nil, err
+	}
 
-	s, err := ristretto255.NewScalar().SetUniformBytes(uniform)
+	s, err := ristretto255.NewScalar().SetUniformBytes(uniform[:])
 	if err != nil {
 		// Unreachable: uniform is of the required fixed length.
 		// A failure indicates a regression in ristretto255.
 		panic(err)
 	}
 
-	return &Scalar{scalar: *s}
+	return &Scalar{scalar: *s}, nil
 }
 
 // HashToGroup returns a safe mapping of the arbitrary input to an Element in the Group.
 // The DST must not be empty or nil, and is recommended to be longer than 16 bytes.
-func (g Group) HashToGroup(input, dst []byte) internal.Element {
-	uniform := hash2curve.ExpandXMD(crypto.SHA512, input, dst, inputLength)
+func (g Group) HashToGroup(input, dst []byte) (internal.Element, error) {
+	var uniform [inputLength]byte
+	if err := hash2curve.ExpandXMDTo(crypto.SHA512, uniform[:], input, dst); err != nil {
+		return nil, err
+	}
 
-	e, err := ristretto255.NewIdentityElement().SetUniformBytes(uniform)
+	e, err := ristretto255.NewIdentityElement().SetUniformBytes(uniform[:])
 	if err != nil {
 		// Unreachable: uniform is of the required fixed length.
 		// A failure indicates a regression in ristretto255.
 		panic(err)
 	}
 
-	return &Element{element: *e}
+	return &Element{element: *e}, nil
 }
 
 // EncodeToGroup returns a non-uniform mapping of the arbitrary input to an Element in the Group.
 // The DST must not be empty or nil, and is recommended to be longer than 16 bytes.
-func (g Group) EncodeToGroup(input, dst []byte) internal.Element {
+func (g Group) EncodeToGroup(input, dst []byte) (internal.Element, error) {
 	return g.HashToGroup(input, dst)
 }
 

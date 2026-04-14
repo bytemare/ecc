@@ -25,10 +25,13 @@ import (
 	"github.com/bytemare/ecc"
 )
 
-const hashToCurveVectorsFileLocation = "h2c"
+const hashToCurveVectorsFileLocation = "vectors/h2c"
 
+// const hashToCurveVectorsFileLocation = "h2c"
 type h2cVectors struct {
-	Ciphersuite string      `json:"ciphersuite"`
+	Ciphersuite string `json:"ciphersuite"`
+	Mode        string
+	Curve       string      `json:"curve"`
 	Dst         string      `json:"dst"`
 	Vectors     []h2cVector `json:"vectors"`
 	group       ecc.Group
@@ -50,19 +53,6 @@ type h2cVector struct {
 	} `json:"Q1"`
 	Msg string   `json:"msg"`
 	U   []string `json:"u"`
-}
-
-func ecFromGroup(g ecc.Group) elliptic.Curve {
-	switch g {
-	case ecc.P256Sha256:
-		return elliptic.P256()
-	case ecc.P384Sha384:
-		return elliptic.P384()
-	case ecc.P521Sha512:
-		return elliptic.P521()
-	default:
-		panic("invalid nist group")
-	}
 }
 
 func vectorToBig(x, y string) (*big.Int, *big.Int) {
@@ -128,49 +118,55 @@ func vectorToSecp256k1(x, y string) []byte {
 	return output[:]
 }
 
-func (v *h2cVector) run(t *testing.T) {
-	var expected string
+func (v *h2cVectors) runCiphersuite(t *testing.T) {
+	for _, vector := range v.Vectors {
+		vector.h2cVectors = v
+		t.Run(v.Ciphersuite, vector.run)
+	}
+}
 
+func ecFromGroup(g ecc.Group) elliptic.Curve {
+	switch g {
+	case ecc.P256Sha256:
+		return elliptic.P256()
+	case ecc.P384Sha384:
+		return elliptic.P384()
+	case ecc.P521Sha512:
+		return elliptic.P521()
+	default:
+		panic("invalid nist group")
+	}
+}
+
+func (v *h2cVector) run(t *testing.T) {
+	var expectedElement string
+
+	// Decode the vector coordinates into the canonical encoding
 	switch v.group {
 	case ecc.P256Sha256, ecc.P384Sha384, ecc.P521Sha512:
 		e := ecFromGroup(v.group)
 		x, y := vectorToBig(v.P.X, v.P.Y)
-		expected = hex.EncodeToString(elliptic.MarshalCompressed(e, x, y))
+		expectedElement = hex.EncodeToString(elliptic.MarshalCompressed(e, x, y))
 	case ecc.Edwards25519Sha512:
 		p := vectorToEdwards25519(t, v.P.X, v.P.Y)
-		expected = hex.EncodeToString(p.Bytes())
+		expectedElement = hex.EncodeToString(p.Bytes())
 	case ecc.Secp256k1Sha256:
-		expected = hex.EncodeToString(vectorToSecp256k1(v.P.X, v.P.Y))
+		expectedElement = hex.EncodeToString(vectorToSecp256k1(v.P.X, v.P.Y))
 	default:
 		t.Fatal("ciphersuite not recognized")
 	}
 
-	switch v.Ciphersuite[len(v.Ciphersuite)-3:] {
-	case "RO_":
-		p, err := v.group.HashToGroup([]byte(v.Msg), []byte(v.Dst))
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if err := verifyEncoding(p, "HashToGroup", expected); err != nil {
-			t.Fatal(err)
-		}
-	case "NU_":
-		p, err := v.group.EncodeToGroup([]byte(v.Msg), []byte(v.Dst))
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if err := verifyEncoding(p, "EncodeToGroup", expected); err != nil {
-			t.Fatal(err)
-		}
-	default:
-		t.Fatal("ciphersuite not recognized")
-	}
+	// Verify HashTo and EncodeTo
+	v.verifyHashingToElement(t, expectedElement)
 }
 
-func verifyEncoding(p *ecc.Element, function, expected string) error {
-	if p.Hex() != expected {
+func (v *h2cVector) verifyElement(p *ecc.Element, function, expected string) error {
+	p2 := v.group.NewElement()
+	if err := p2.DecodeHex(expected); err != nil {
+		return err
+	}
+
+	if !p.Equal(p2) {
 		return fmt.Errorf("Unexpected %s output.\n\tExpected %q\n\tgot %q",
 			function,
 			expected,
@@ -181,23 +177,60 @@ func verifyEncoding(p *ecc.Element, function, expected string) error {
 	return nil
 }
 
-func (v *h2cVectors) runCiphersuite(t *testing.T) {
-	for _, vector := range v.Vectors {
-		vector.h2cVectors = v
-		t.Run(v.Ciphersuite, vector.run)
+func (v *h2cVector) verifyHashingToElement(t *testing.T, expectedElement string) {
+	var p *ecc.Element
+	var err error
+	var function string
+
+	switch v.Mode {
+	case "RO_":
+		function = "HashToGroup"
+
+		p, err = v.group.HashToGroup([]byte(v.Msg), []byte(v.Dst))
+		if err != nil {
+			t.Fatal(err)
+		}
+	case "NU_":
+		function = "EncodeToGroup"
+
+		p, err = v.group.EncodeToGroup([]byte(v.Msg), []byte(v.Dst))
+		if err != nil {
+			t.Fatal(err)
+		}
+	default:
+		t.Fatal("ciphersuite not recognized")
+	}
+
+	if err := v.verifyElement(p, function, expectedElement); err != nil {
+		t.Fatal(err)
 	}
 }
 
-func TestHashToGroupVectors(t *testing.T) {
-	getGroup := func(ciphersuite string) (ecc.Group, bool) {
-		for _, group := range testTable {
-			if group.h2c == ciphersuite || group.e2c == ciphersuite {
-				return group.group, true
-			}
+var groups = []struct {
+	h2c   string
+	e2c   string
+	group ecc.Group
+}{
+	{ecc.Ristretto255Sha512, "ristretto255_XMD:SHA-512_R255MAP_RO_", "ristretto255_XMD:SHA-512_R255MAP_RO_"},
+	{ecc.P256Sha256, "P256_XMD:SHA-256_SSWU_RO_", "P256_XMD:SHA-256_SSWU_NU_"},
+	{ecc.P384Sha384, "P384_XMD:SHA-384_SSWU_RO_", "P384_XMD:SHA-384_SSWU_NU_"},
+	{ecc.P521Sha512, "P521_XMD:SHA-512_SSWU_RO_", "P521_XMD:SHA-512_SSWU_NU_"},
+	{ecc.Edwards25519Sha512, "edwards25519_XMD:SHA-512_ELL2_RO_", "edwards25519_XMD:SHA-512_ELL2_NU_"},
+	{ecc.Secp256k1Sha256, "secp256k1_XMD:SHA-256_SSWU_RO_", "secp256k1_XMD:SHA-256_SSWU_NU_"},
+}
+
+// for a given ciphersuite string, return the corresponding group identifier.
+func getGroup(ciphersuite string) (ecc.Group, bool) {
+	for _, group := range groups {
+		if group.h2c == ciphersuite || group.e2c == ciphersuite {
+			return group.group, true
 		}
-		return 0, false
 	}
 
+	return 0, false
+}
+
+func TestHashToCurveVectors(t *testing.T) {
 	if err := filepath.Walk(hashToCurveVectorsFileLocation,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -238,6 +271,7 @@ func TestHashToGroupVectors(t *testing.T) {
 			}
 
 			v.group = group
+			v.Mode = v.Ciphersuite[len(v.Ciphersuite)-3:]
 			t.Run(v.Ciphersuite, v.runCiphersuite)
 
 			return nil

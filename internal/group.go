@@ -27,15 +27,15 @@ type Group interface {
 
 	// HashToScalar returns a safe mapping of the arbitrary input to a Scalar.
 	// The DST must not be empty or nil, and is recommended to be longer than 16 bytes.
-	HashToScalar(input, dst []byte) Scalar
+	HashToScalar(input, dst []byte) (Scalar, error)
 
 	// HashToGroup returns a safe mapping of the arbitrary input to an Element in the Group.
 	// The DST must not be empty or nil, and is recommended to be longer than 16 bytes.
-	HashToGroup(input, dst []byte) Element
+	HashToGroup(input, dst []byte) (Element, error)
 
 	// EncodeToGroup returns a non-uniform mapping of the arbitrary input to an Element in the Group.
 	// The DST must not be empty or nil, and is recommended to be longer than 16 bytes.
-	EncodeToGroup(input, dst []byte) Element
+	EncodeToGroup(input, dst []byte) (Element, error)
 
 	// Ciphersuite returns the hash-to-curve ciphersuite identifier.
 	Ciphersuite() string

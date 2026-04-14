@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/bytemare/ecc"
+	"github.com/bytemare/ecc/hash2curve"
 	"github.com/bytemare/ecc/internal"
 )
 
@@ -160,13 +161,13 @@ func TestHashToScalar_NoDST(t *testing.T) {
 		expectErrors(t, func() error {
 			_, err := group.group.HashToScalar(data, nil)
 			return err
-		}, ecc.ErrZeroLengthDST)
+		}, hash2curve.ErrZeroLengthDST)
 
 		// Zero length DST
 		expectErrors(t, func() error {
 			_, err := group.group.HashToScalar(data, []byte{})
 			return err
-		}, ecc.ErrZeroLengthDST)
+		}, hash2curve.ErrZeroLengthDST)
 	})
 }
 
@@ -193,13 +194,13 @@ func TestHashToGroup_NoDST(t *testing.T) {
 		expectErrors(t, func() error {
 			_, err := group.group.HashToGroup(data, nil)
 			return err
-		}, ecc.ErrZeroLengthDST)
+		}, hash2curve.ErrZeroLengthDST)
 
 		// Zero length DST
 		expectErrors(t, func() error {
 			_, err := group.group.HashToGroup(data, []byte{})
 			return err
-		}, ecc.ErrZeroLengthDST)
+		}, hash2curve.ErrZeroLengthDST)
 	})
 }
 
@@ -211,13 +212,13 @@ func TestEncodeToGroup_NoDST(t *testing.T) {
 		expectErrors(t, func() error {
 			_, err := group.group.EncodeToGroup(data, nil)
 			return err
-		}, ecc.ErrZeroLengthDST)
+		}, hash2curve.ErrZeroLengthDST)
 
 		// Zero length DST
 		expectErrors(t, func() error {
 			_, err := group.group.EncodeToGroup(data, []byte{})
 			return err
-		}, ecc.ErrZeroLengthDST)
+		}, hash2curve.ErrZeroLengthDST)
 	})
 }
 
