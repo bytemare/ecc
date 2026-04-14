@@ -8,6 +8,8 @@ github.com/bytemare/hash2curve v0.5.4 h1:WLgEKcoZKHZ41a/TApFMxhaLYHNh9lL2DNAIZCV
 github.com/bytemare/hash2curve v0.5.4/go.mod h1:XxXWaFy2g3AsIPovVp4Q8g9GDHNfr2NStnYNC+z1WRo=
 github.com/bytemare/secp256k1 v0.4.0 h1:xGR4NTfdtDZSfihM5xuMZsLzXavylYm7Fut3kHLs+fg=
 github.com/bytemare/secp256k1 v0.4.0/go.mod h1:9AntSfCtXjopK1lL4ReEYqc7X56ZfmTGeL17P4/nmFE=
+github.com/bytemare/secp256k1 v0.5.0 h1:8sOG8jTWJSpnvjeLMbEZVs/4RNDOCy9YbMEy32DIt+4=
+github.com/bytemare/secp256k1 v0.5.0/go.mod h1:9AntSfCtXjopK1lL4ReEYqc7X56ZfmTGeL17P4/nmFE=
 github.com/gtank/ristretto255 v0.2.0 h1:LeOuWr6giplWkkMizx2emfG03SRPJqKt1nfIHLVHQ/0=
 github.com/gtank/ristretto255 v0.2.0/go.mod h1:OJ1ox/dWcp7sJ5grYDcZ+kkHYuj5nelW5aaL7ESVXBw=
 golang.org/x/crypto v0.49.0 h1:+Ng2ULVvLHnJ/ZFEq4KdcDd/cfjrrjjNSXNzxg0Y4U4=
