@@ -11,18 +11,13 @@ package ecc_test
 import (
 	"bytes"
 	"testing"
+
+	"github.com/bytemare/ecc/hash2curve"
 )
 
-func benchAll(b *testing.B, f func(*testing.B, *testGroup)) {
-	for _, group := range testTable {
-		b.Run(group.name, func(t *testing.B) {
-			f(t, group)
-		})
-	}
-}
-
+// BenchmarkPow benchmarks scalar exponentiation across all groups.
 func BenchmarkPow(b *testing.B) {
-	benchAll(b, func(b *testing.B, group *testGroup) {
+	testAllGroups(b, func(group *testGroup) {
 		b.ResetTimer()
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
@@ -34,10 +29,12 @@ func BenchmarkPow(b *testing.B) {
 	})
 }
 
+// BenchmarkHashToScalar benchmarks hashing arbitrary input to scalars across all groups.
 func BenchmarkHashToScalar(b *testing.B) {
-	msg := make([]byte, 256)
-	dst := make([]byte, 10)
-	benchAll(b, func(b *testing.B, group *testGroup) {
+	msg := []byte("benchmark message")
+	dst := []byte("benchmark-dst")
+
+	testAllGroups(b, func(group *testGroup) {
 		b.SetBytes(int64(len(msg) + len(dst)))
 		b.ResetTimer()
 		b.ReportAllocs()
@@ -47,10 +44,12 @@ func BenchmarkHashToScalar(b *testing.B) {
 	})
 }
 
+// BenchmarkHashToGroup benchmarks hashing arbitrary input to group elements across all groups.
 func BenchmarkHashToGroup(b *testing.B) {
-	msg := make([]byte, 256)
-	dst := make([]byte, 10)
-	benchAll(b, func(b *testing.B, group *testGroup) {
+	msg := []byte("benchmark message")
+	dst := []byte("benchmark-dst")
+
+	testAllGroups(b, func(group *testGroup) {
 		b.SetBytes(int64(len(msg) + len(dst)))
 		b.ResetTimer()
 		b.ReportAllocs()
@@ -60,10 +59,12 @@ func BenchmarkHashToGroup(b *testing.B) {
 	})
 }
 
+// BenchmarkEncodeToGroup benchmarks non-uniform encoding of arbitrary input to group elements across all groups.
 func BenchmarkEncodeToGroup(b *testing.B) {
-	msg := make([]byte, 256)
-	dst := make([]byte, 10)
-	benchAll(b, func(b *testing.B, group *testGroup) {
+	msg := []byte("benchmark message")
+	dst := []byte("benchmark-dst")
+
+	testAllGroups(b, func(group *testGroup) {
 		b.SetBytes(int64(len(msg) + len(dst)))
 		b.ResetTimer()
 		b.ReportAllocs()
@@ -73,8 +74,9 @@ func BenchmarkEncodeToGroup(b *testing.B) {
 	})
 }
 
+// BenchmarkSubtraction benchmarks element subtraction across all groups.
 func BenchmarkSubtraction(b *testing.B) {
-	benchAll(b, func(b *testing.B, group *testGroup) {
+	testAllGroups(b, func(group *testGroup) {
 		b.ResetTimer()
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
@@ -84,8 +86,9 @@ func BenchmarkSubtraction(b *testing.B) {
 	})
 }
 
+// BenchmarkScalarBaseMult benchmarks base-point scalar multiplication across all groups.
 func BenchmarkScalarBaseMult(b *testing.B) {
-	benchAll(b, func(b *testing.B, group *testGroup) {
+	testAllGroups(b, func(group *testGroup) {
 		priv := group.group.NewScalar().Random()
 		b.ResetTimer()
 		b.ReportAllocs()
@@ -96,8 +99,9 @@ func BenchmarkScalarBaseMult(b *testing.B) {
 	})
 }
 
+// BenchmarkScalarMult benchmarks arbitrary-point scalar multiplication across all groups.
 func BenchmarkScalarMult(b *testing.B) {
-	benchAll(b, func(b *testing.B, group *testGroup) {
+	testAllGroups(b, func(group *testGroup) {
 		priv := group.group.NewScalar().Random()
 		pub := group.group.Base().Multiply(group.group.NewScalar().Random())
 		b.ResetTimer()
@@ -108,32 +112,59 @@ func BenchmarkScalarMult(b *testing.B) {
 	})
 }
 
+// BenchmarkScalarEqual benchmarks scalar equality checks across all groups.
 func BenchmarkScalarEqual(b *testing.B) {
-	benchAll(b, func(b *testing.B, group *testGroup) {
+	testAllGroups(b, func(group *testGroup) {
 		left, _ := group.group.HashToScalar([]byte("benchmark left"), []byte("benchmark-dst-left"))
 		right, _ := group.group.HashToScalar([]byte("benchmark right"), []byte("benchmark-dst-right"))
 		b.ResetTimer()
+		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			_ = left.Equal(right)
 		}
 	})
 }
 
+// BenchmarkScalarLessOrEqual benchmarks scalar ordering checks across all groups.
 func BenchmarkScalarLessOrEqual(b *testing.B) {
-	benchAll(b, func(b *testing.B, group *testGroup) {
+	testAllGroups(b, func(group *testGroup) {
 		left, _ := group.group.HashToScalar([]byte("benchmark left"), []byte("benchmark-dst-left"))
 		right, _ := group.group.HashToScalar([]byte("benchmark right"), []byte("benchmark-dst-right"))
 		b.ResetTimer()
+		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			_ = left.LessOrEqual(right)
 		}
 	})
 }
 
-func BenchmarkMarshalUnmarshal(b *testing.B) {
-	benchAll(b, func(b *testing.B, group *testGroup) {
+// BenchmarkMarshalUnmarshal benchmarks scalar binary round-tripping across all groups.
+func BenchmarkMarshalUnmarshalScalar(b *testing.B) {
+	testAllGroups(b, func(group *testGroup) {
+		s := group.group.NewScalar().Random()
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			buf := s.Encode()
+
+			pk := group.group.NewScalar()
+			if err := pk.Decode(buf); err != nil {
+				b.Fatal(err)
+			}
+
+			if !bytes.Equal(buf, pk.Encode()) {
+				b.Error("Unmarshal output different from Marshal input")
+			}
+		}
+	})
+}
+
+// BenchmarkMarshalUnmarshal benchmarks element binary round-tripping across all groups.
+func BenchmarkMarshalUnmarshalElement(b *testing.B) {
+	testAllGroups(b, func(group *testGroup) {
 		pub := group.group.Base().Multiply(group.group.NewScalar().Random())
 		b.ReportAllocs()
+		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			buf := pub.Encode()
 			pk := group.group.NewElement()
@@ -143,6 +174,39 @@ func BenchmarkMarshalUnmarshal(b *testing.B) {
 			if !bytes.Equal(buf, pk.Encode()) {
 				b.Error("Unmarshal output different from Marshal input")
 			}
+		}
+	})
+}
+
+// BenchmarkExpandXMD benchmarks allocating XMD expansion for representative suite lengths.
+func BenchmarkExpandXMD(b *testing.B) {
+	input := []byte("benchmark input")
+	dst := []byte("benchmark-dst")
+
+	testAllGroups(b, func(group *testGroup) {
+		b.ReportAllocs()
+		b.SetBytes(int64(len(input) + len(dst)))
+		b.ResetTimer()
+
+		for i := 0; i < b.N; i++ {
+			_, _ = hash2curve.ExpandXMD(group.hash, input, dst, group.hashToCurve.securityLength)
+		}
+	})
+}
+
+// BenchmarkExpandXMDTo benchmarks sink-style XMD expansion for representative suite lengths.
+func BenchmarkExpandXMDTo(b *testing.B) {
+	input := []byte("benchmark input")
+	dst := []byte("benchmark-dst")
+
+	testAllGroups(b, func(group *testGroup) {
+		b.ReportAllocs()
+		b.SetBytes(int64(len(input) + len(dst)))
+		b.ResetTimer()
+		out := make([]byte, group.hashToCurve.securityLength)
+
+		for i := 0; i < b.N; i++ {
+			_ = hash2curve.ExpandXMDTo(group.hash, out, input, dst)
 		}
 	})
 }

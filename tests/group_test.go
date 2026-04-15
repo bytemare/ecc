@@ -19,6 +19,7 @@ import (
 
 const consideredAvailableFmt = "%v is considered available when it must not"
 
+// TestAvailability tests that all supported groups report themselves as available.
 func TestAvailability(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		if !group.group.Available() {
@@ -27,6 +28,7 @@ func TestAvailability(t *testing.T) {
 	})
 }
 
+// TestNonAvailability tests that unsupported and out-of-range groups report unavailable and panic on String.
 func TestNonAvailability(t *testing.T) {
 	oob := ecc.Group(0)
 	if oob.Available() {
@@ -51,6 +53,7 @@ func TestNonAvailability(t *testing.T) {
 	expectPanic(t, "oob availability", internal.ErrInvalidGroup, func() { _ = oob.String() })
 }
 
+// TestGroup_Base tests that each group returns the expected canonical generator.
 func TestGroup_Base(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		if group.group.Base().Hex() != group.basePoint {
@@ -61,6 +64,7 @@ func TestGroup_Base(t *testing.T) {
 	})
 }
 
+// TestDST tests that MakeDST builds the expected application and ciphersuite-specific DST.
 func TestDST(t *testing.T) {
 	app := "app"
 	version := uint8(1)
@@ -75,23 +79,25 @@ func TestDST(t *testing.T) {
 
 	testAllGroups(t, func(group *testGroup) {
 		res := string(group.group.MakeDST(app, version))
-		test := tests[group.group] + group.h2c
+		test := tests[group.group] + group.hashToCurve.h2c
 		if res != test {
 			t.Errorf("Wrong DST. want %q, got %q", res, test)
 		}
 	})
 }
 
+// TestGroup_String tests that String returns the RFC 9380 ciphersuite identifier.
 func TestGroup_String(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		res := group.group.String()
-		ref := group.h2c
+		ref := group.hashToCurve.h2c
 		if res != ref {
 			t.Errorf("Wrong DST. want %q, got %q", ref, res)
 		}
 	})
 }
 
+// TestGroup_NewScalar tests that NewScalar returns the zero scalar for each group.
 func TestGroup_NewScalar(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		s := group.group.NewScalar().Encode()
@@ -103,6 +109,7 @@ func TestGroup_NewScalar(t *testing.T) {
 	})
 }
 
+// TestGroup_NewElement tests that NewElement returns the identity element for each group.
 func TestGroup_NewElement(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		e := hex.EncodeToString(group.group.NewElement().Encode())
@@ -114,6 +121,7 @@ func TestGroup_NewElement(t *testing.T) {
 	})
 }
 
+// TestGroup_ScalarLength tests that ScalarLength matches the expected encoded scalar size.
 func TestGroup_ScalarLength(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		if int(group.group.ScalarLength()) != group.scalarLength {
@@ -122,6 +130,7 @@ func TestGroup_ScalarLength(t *testing.T) {
 	})
 }
 
+// TestGroup_ElementLength tests that ElementLength matches the expected encoded element size.
 func TestGroup_ElementLength(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		if group.group.ElementLength() != group.elementLength {
@@ -130,6 +139,7 @@ func TestGroup_ElementLength(t *testing.T) {
 	})
 }
 
+// TestHashFunc tests that each group exposes the expected hash function.
 func TestHashFunc(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		if group.group.HashFunc() != group.hash {
@@ -138,6 +148,7 @@ func TestHashFunc(t *testing.T) {
 	})
 }
 
+// TestHashToScalar tests that HashToScalar matches the per-group reference vectors.
 func TestHashToScalar(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		sv := decodeScalar(t, group.group, group.hashToCurve.hashToScalar)
@@ -153,6 +164,7 @@ func TestHashToScalar(t *testing.T) {
 	})
 }
 
+// TestHashToScalar_NoDST tests that HashToScalar rejects nil and empty DST values.
 func TestHashToScalar_NoDST(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		data := []byte("input data")
@@ -171,6 +183,7 @@ func TestHashToScalar_NoDST(t *testing.T) {
 	})
 }
 
+// TestHashToGroup tests that HashToGroup matches the per-group reference vectors.
 func TestHashToGroup(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		ev := decodeElement(t, group.group, group.hashToCurve.hashToGroup)
@@ -186,6 +199,7 @@ func TestHashToGroup(t *testing.T) {
 	})
 }
 
+// TestHashToGroup_NoDST tests that HashToGroup rejects nil and empty DST values.
 func TestHashToGroup_NoDST(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		data := []byte("input data")
@@ -204,6 +218,7 @@ func TestHashToGroup_NoDST(t *testing.T) {
 	})
 }
 
+// TestEncodeToGroup_NoDST tests that EncodeToGroup rejects nil and empty DST values.
 func TestEncodeToGroup_NoDST(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		data := []byte("input data")
@@ -222,6 +237,7 @@ func TestEncodeToGroup_NoDST(t *testing.T) {
 	})
 }
 
+// TestGroup_Order tests that each group returns the expected encoded scalar field order.
 func TestGroup_Order(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		h := hex.EncodeToString(group.group.Order())

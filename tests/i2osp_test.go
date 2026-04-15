@@ -47,6 +47,7 @@ var I2OSPVectors = []I2ospTest{
 	},
 }
 
+// TestI2osp tests I2OSP against known vectors and boundary conditions.
 func TestI2osp(t *testing.T) {
 	for i, v := range I2OSPVectors {
 		t.Run(fmt.Sprintf("%d - %d - %v", v.value, v.size, v.encoded), func(t *testing.T) {

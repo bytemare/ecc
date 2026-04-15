@@ -192,8 +192,10 @@ func newScalar(params *scalarParams) *Scalar {
 
 func hashToScalar(params *scalarParams, input, dst []byte) (internal.Scalar, error) {
 	length := int(params.hashToScalarLength)
-	uniform, err := hash2curve.ExpandXMD(params.hash, input, dst, uint(length))
-	if err != nil {
+	var uniform [98]byte // 98 is the highest value we would use, for P521.
+
+	// Pre-allocate a larger buffer but slice it to length. This spares a dedicated allocation.
+	if err := hash2curve.ExpandXMDTo(params.hash, uniform[:length], input, dst); err != nil {
 		return nil, err
 	}
 

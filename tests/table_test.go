@@ -15,9 +15,14 @@ import (
 	group "github.com/bytemare/ecc"
 )
 
-func testAllGroups(t *testing.T, f func(*testGroup)) {
+type TBRun[T any] interface {
+	testing.TB
+	Run(string, func(T)) bool
+}
+
+func testAllGroups[T TBRun[T]](t T, f func(*testGroup)) {
 	for _, test := range testTable {
-		t.Run(test.name, func(t *testing.T) {
+		t.Run(test.name, func(t T) {
 			f(test)
 		})
 	}
@@ -29,18 +34,19 @@ var (
 )
 
 type testHashToCurve struct {
-	hashToScalar string
-	hashToGroup  string
-	input        []byte
-	dst          []byte
+	h2c            string
+	e2c            string
+	hashToScalar   string
+	hashToGroup    string
+	input          []byte
+	dst            []byte
+	securityLength uint
 }
 
 // a testGroup references some parameters of a Group.
 type testGroup struct {
 	multBase      [15]string
 	name          string
-	h2c           string
-	e2c           string
 	basePoint     string
 	basePointX    string
 	identity      string
@@ -73,8 +79,6 @@ var testTable = []*testGroup{
 			"e0c418f7c8d9c4cdd7395b93ea124f3ad99021bb681dfc3302a9d99a2e53e64e",
 		},
 		name:          "Ristretto255",
-		h2c:           "ristretto255_XMD:SHA-512_R255MAP_RO_",
-		e2c:           "ristretto255_XMD:SHA-512_R255MAP_RO_",
 		basePoint:     ristrettoBasePoint,
 		basePointX:    ristrettoBasePoint,
 		identity:      "0000000000000000000000000000000000000000000000000000000000000000",
@@ -83,10 +87,13 @@ var testTable = []*testGroup{
 		elementLength: 32,
 		scalarLength:  32,
 		hashToCurve: testHashToCurve{
-			input:        testHashToGroupInput,
-			dst:          testHashToGroupDST,
-			hashToScalar: "7cf9410111022202c71f9d317d6fcd711a84fee5a406063f8376379bbe8a3f03",
-			hashToGroup:  "d0f15a907366d66998784ff0148356bb0de24088680fb29d5fbe1a629d743b10",
+			h2c:            "ristretto255_XMD:SHA-512_R255MAP_RO_",
+			e2c:            "ristretto255_XMD:SHA-512_R255MAP_RO_",
+			input:          testHashToGroupInput,
+			dst:            testHashToGroupDST,
+			hashToScalar:   "7cf9410111022202c71f9d317d6fcd711a84fee5a406063f8376379bbe8a3f03",
+			hashToGroup:    "d0f15a907366d66998784ff0148356bb0de24088680fb29d5fbe1a629d743b10",
+			securityLength: 64,
 		},
 		group: 1,
 		hash:  crypto.SHA512,
@@ -110,8 +117,6 @@ var testTable = []*testGroup{
 			"02f0454dc6971abae7adfb378999888265ae03af92de3a0ef163668c63e59b9d5f",
 		},
 		name:          "P256",
-		h2c:           "P256_XMD:SHA-256_SSWU_RO_",
-		e2c:           "P256_XMD:SHA-256_SSWU_NU_",
 		basePoint:     "036b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296",
 		basePointX:    "6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296",
 		identity:      "000000000000000000000000000000000000000000000000000000000000000000",
@@ -120,10 +125,13 @@ var testTable = []*testGroup{
 		elementLength: 33,
 		scalarLength:  32,
 		hashToCurve: testHashToCurve{
-			input:        testHashToGroupInput,
-			dst:          testHashToGroupDST,
-			hashToScalar: "4b51fd1148439c3a30539e87a2a75c63d72f71b74d108184beeb933d259456b9",
-			hashToGroup:  "03536d17bf54e34ebc3926d425e76502b54bc2c393369fc6df0c729a18df667f4c",
+			h2c:            "P256_XMD:SHA-256_SSWU_RO_",
+			e2c:            "P256_XMD:SHA-256_SSWU_NU_",
+			input:          testHashToGroupInput,
+			dst:            testHashToGroupDST,
+			hashToScalar:   "4b51fd1148439c3a30539e87a2a75c63d72f71b74d108184beeb933d259456b9",
+			hashToGroup:    "03536d17bf54e34ebc3926d425e76502b54bc2c393369fc6df0c729a18df667f4c",
+			securityLength: 48,
 		},
 		group: 3,
 		hash:  crypto.SHA256,
@@ -147,8 +155,6 @@ var testTable = []*testGroup{
 			"02b3d13fc8b32b01058cc15c11d813525522a94156fff01c205b21f9f7da7c4e9ca849557a10b6383b4b88701a9606860b",
 		},
 		name:          "P384",
-		h2c:           "P384_XMD:SHA-384_SSWU_RO_",
-		e2c:           "P384_XMD:SHA-384_SSWU_NU_",
 		basePoint:     "03aa87ca22be8b05378eb1c71ef320ad746e1d3b628ba79b9859f741e082542a385502f25dbf55296c3a545e3872760ab7",
 		basePointX:    "aa87ca22be8b05378eb1c71ef320ad746e1d3b628ba79b9859f741e082542a385502f25dbf55296c3a545e3872760ab7",
 		identity:      "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
@@ -157,10 +163,13 @@ var testTable = []*testGroup{
 		elementLength: 49,
 		scalarLength:  48,
 		hashToCurve: testHashToCurve{
-			input:        testHashToGroupInput,
-			dst:          testHashToGroupDST,
-			hashToScalar: "d22b5352caa675f8a2f385236b95cbc1f84b9e34540b3587d6d55bd5032bf51aeb54ccab701c6f05a489b82ec301012d",
-			hashToGroup:  "02777ff137e17b48ab4984de510461af79cf34609ac27f98eb2a4a553f94dbf31bf97b5cf7bac08f60bb8c7ee474a26202",
+			h2c:            "P384_XMD:SHA-384_SSWU_RO_",
+			e2c:            "P384_XMD:SHA-384_SSWU_NU_",
+			input:          testHashToGroupInput,
+			dst:            testHashToGroupDST,
+			hashToScalar:   "d22b5352caa675f8a2f385236b95cbc1f84b9e34540b3587d6d55bd5032bf51aeb54ccab701c6f05a489b82ec301012d",
+			hashToGroup:    "02777ff137e17b48ab4984de510461af79cf34609ac27f98eb2a4a553f94dbf31bf97b5cf7bac08f60bb8c7ee474a26202",
+			securityLength: 72,
 		},
 		group: 4,
 		hash:  crypto.SHA384,
@@ -184,8 +193,6 @@ var testTable = []*testGroup{
 			"03006b6ad89abcb92465f041558fc546d4300fb8fbcc30b40a0852d697b532df128e11b91cce27dbd00ffe7875bd1c8fc0331d9b8d96981e3f92bde9afe337bcb8db55",
 		},
 		name:          "P521",
-		h2c:           "P521_XMD:SHA-512_SSWU_RO_",
-		e2c:           "P521_XMD:SHA-512_SSWU_NU_",
 		basePoint:     "0200c6858e06b70404e9cd9e3ecb662395b4429c648139053fb521f828af606b4d3dbaa14b5e77efe75928fe1dc127a2ffa8de3348b3c1856a429bf97e7e31c2e5bd66",
 		basePointX:    "00c6858e06b70404e9cd9e3ecb662395b4429c648139053fb521f828af606b4d3dbaa14b5e77efe75928fe1dc127a2ffa8de3348b3c1856a429bf97e7e31c2e5bd66",
 		identity:      "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
@@ -194,10 +201,13 @@ var testTable = []*testGroup{
 		elementLength: 67,
 		scalarLength:  66,
 		hashToCurve: testHashToCurve{
-			input:        testHashToGroupInput,
-			dst:          testHashToGroupDST,
-			hashToScalar: "01f4e5806586dbebd01e85b17da1eb2df4ac678bc8683b9baa5dd5fba6a0f9d1ff5621ed342a90273150fd095c7abc07f97d202183ec804d063b9fcc0b95daec0614",
-			hashToGroup:  "0300d24ae26cefe28681d4cf35cf7bea7de3acd15f38ba0b835303c9cdc641d1912566041cb5f6939ad43f0b21e506cecc4a8124a0517dce94f2f1affa47f052f25bf0",
+			h2c:            "P521_XMD:SHA-512_SSWU_RO_",
+			e2c:            "P521_XMD:SHA-512_SSWU_NU_",
+			input:          testHashToGroupInput,
+			dst:            testHashToGroupDST,
+			hashToScalar:   "01f4e5806586dbebd01e85b17da1eb2df4ac678bc8683b9baa5dd5fba6a0f9d1ff5621ed342a90273150fd095c7abc07f97d202183ec804d063b9fcc0b95daec0614",
+			hashToGroup:    "0300d24ae26cefe28681d4cf35cf7bea7de3acd15f38ba0b835303c9cdc641d1912566041cb5f6939ad43f0b21e506cecc4a8124a0517dce94f2f1affa47f052f25bf0",
+			securityLength: 98,
 		},
 		group: 5,
 		hash:  crypto.SHA512,
@@ -221,8 +231,6 @@ var testTable = []*testGroup{
 			"df5c2eadc44c6d94a19a9aa118afe5ac3193d26401f76251f522ff042dfbcb92",
 		},
 		name:          "Edwards25519",
-		h2c:           "edwards25519_XMD:SHA-512_ELL2_RO_",
-		e2c:           "edwards25519_XMD:SHA-512_ELL2_NU_",
 		basePoint:     "5866666666666666666666666666666666666666666666666666666666666666",
 		basePointX:    "0900000000000000000000000000000000000000000000000000000000000000",
 		identity:      "0100000000000000000000000000000000000000000000000000000000000000",
@@ -231,10 +239,13 @@ var testTable = []*testGroup{
 		elementLength: 32,
 		scalarLength:  32,
 		hashToCurve: testHashToCurve{
-			input:        testHashToGroupInput,
-			dst:          testHashToGroupDST,
-			hashToScalar: "90249f56fa61b29fc09b8787d9954a6beba6ca49e25c80f78560ca5458e5b807",
-			hashToGroup:  "a2ca6693cdda5b8d204a506fe873ce1d3e58d5b14d04635e13c10ba9d5637f8f",
+			h2c:            "edwards25519_XMD:SHA-512_ELL2_RO_",
+			e2c:            "edwards25519_XMD:SHA-512_ELL2_NU_",
+			input:          testHashToGroupInput,
+			dst:            testHashToGroupDST,
+			hashToScalar:   "90249f56fa61b29fc09b8787d9954a6beba6ca49e25c80f78560ca5458e5b807",
+			hashToGroup:    "a2ca6693cdda5b8d204a506fe873ce1d3e58d5b14d04635e13c10ba9d5637f8f",
+			securityLength: 48,
 		},
 		group: 6,
 		hash:  crypto.SHA512,
@@ -258,8 +269,6 @@ var testTable = []*testGroup{
 			"02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e",
 		},
 		name:          "Secp256k1",
-		h2c:           "secp256k1_XMD:SHA-256_SSWU_RO_",
-		e2c:           "secp256k1_XMD:SHA-256_SSWU_NU_",
 		basePoint:     "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
 		basePointX:    "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
 		identity:      "000000000000000000000000000000000000000000000000000000000000000000",
@@ -268,10 +277,13 @@ var testTable = []*testGroup{
 		elementLength: 33,
 		scalarLength:  32,
 		hashToCurve: testHashToCurve{
-			input:        testHashToGroupInput,
-			dst:          testHashToGroupDST,
-			hashToScalar: "782a63d48eace435ac06468208d9a62e3680e4ddc3977c4345b2c6de08258b69",
-			hashToGroup:  "0210dca4244e263298000ff1e9f0dfbf1c28333e1f0a252024e8b20b9921cdf3b2",
+			h2c:            "secp256k1_XMD:SHA-256_SSWU_RO_",
+			e2c:            "secp256k1_XMD:SHA-256_SSWU_NU_",
+			input:          testHashToGroupInput,
+			dst:            testHashToGroupDST,
+			hashToScalar:   "782a63d48eace435ac06468208d9a62e3680e4ddc3977c4345b2c6de08258b69",
+			hashToGroup:    "0210dca4244e263298000ff1e9f0dfbf1c28333e1f0a252024e8b20b9921cdf3b2",
+			securityLength: 48,
 		},
 		group: 7,
 		hash:  crypto.SHA256,

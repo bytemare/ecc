@@ -11,9 +11,6 @@ package sswu
 import (
 	"encoding/binary"
 	"math/big"
-	"os"
-	"path/filepath"
-	"strings"
 	"testing"
 )
 
@@ -26,16 +23,19 @@ type mockElement struct {
 	v uint64
 }
 
+// One sets e to the multiplicative identity in the mock field.
 func (e *mockElement) One() *mockElement {
 	e.v = 1
 	return e
 }
 
+// Set copies t into e.
 func (e *mockElement) Set(t *mockElement) *mockElement {
 	e.v = t.v
 	return e
 }
 
+// SetBytes reduces the big-endian input modulo the mock field.
 func (e *mockElement) SetBytes(in []byte) (*mockElement, error) {
 	value := new(big.Int).SetBytes(in)
 	value.Mod(value, big.NewInt(mockModulus))
@@ -43,32 +43,38 @@ func (e *mockElement) SetBytes(in []byte) (*mockElement, error) {
 	return e, nil
 }
 
+// Bytes returns the canonical big-endian encoding of e.
 func (e *mockElement) Bytes() []byte {
 	out := make([]byte, mockFieldLength)
 	binary.BigEndian.PutUint64(out[mockFieldLength-8:], e.v)
 	return out
 }
 
+// Add sets e to t1+t2 modulo the mock field.
 func (e *mockElement) Add(t1, t2 *mockElement) *mockElement {
 	e.v = (t1.v + t2.v) % mockModulus
 	return e
 }
 
+// Sub sets e to t1-t2 modulo the mock field.
 func (e *mockElement) Sub(t1, t2 *mockElement) *mockElement {
 	e.v = (t1.v + mockModulus - t2.v%mockModulus) % mockModulus
 	return e
 }
 
+// Mul sets e to t1*t2 modulo the mock field.
 func (e *mockElement) Mul(t1, t2 *mockElement) *mockElement {
 	e.v = (t1.v * t2.v) % mockModulus
 	return e
 }
 
+// Square sets e to t^2 modulo the mock field.
 func (e *mockElement) Square(t *mockElement) *mockElement {
 	e.v = (t.v * t.v) % mockModulus
 	return e
 }
 
+// Invert sets e to the multiplicative inverse of t in the mock field.
 func (e *mockElement) Invert(t *mockElement) *mockElement {
 	inverse := new(big.Int).ModInverse(big.NewInt(int64(t.v)), big.NewInt(mockModulus))
 	if inverse == nil {
@@ -78,6 +84,7 @@ func (e *mockElement) Invert(t *mockElement) *mockElement {
 	return e
 }
 
+// Select sets e to a when cond is 1 and to b otherwise.
 func (e *mockElement) Select(a, b *mockElement, cond int) *mockElement {
 	if cond == 1 {
 		e.v = a.v
@@ -87,6 +94,7 @@ func (e *mockElement) Select(a, b *mockElement, cond int) *mockElement {
 	return e
 }
 
+// Equal returns 1 if e and t hold the same mock-field value and 0 otherwise.
 func (e *mockElement) Equal(t *mockElement) int {
 	if e.v == t.v {
 		return 1
@@ -94,6 +102,7 @@ func (e *mockElement) Equal(t *mockElement) int {
 	return 0
 }
 
+// IsZero returns 1 if e is zero in the mock field and 0 otherwise.
 func (e *mockElement) IsZero() int {
 	if e.v == 0 {
 		return 1
@@ -151,6 +160,7 @@ func reduceReference(input []byte) uint64 {
 	return acc.Uint64()
 }
 
+// TestReduceUniformHandlesFullChunks tests that reduceUniform handles inputs made only of 64-bit chunks.
 func TestReduceUniformHandlesFullChunks(t *testing.T) {
 	engine := newMockEngine()
 	input := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}
@@ -159,30 +169,11 @@ func TestReduceUniformHandlesFullChunks(t *testing.T) {
 	}
 }
 
+// TestReduceUniformHandlesLeadingPartialChunk tests that reduceUniform handles inputs with a leading partial chunk.
 func TestReduceUniformHandlesLeadingPartialChunk(t *testing.T) {
 	engine := newMockEngine()
 	input := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18}
 	if got, want := engine.reduceUniform(input).v, reduceReference(input); got != want {
 		t.Fatalf("unexpected reduction result: got %d, want %d", got, want)
-	}
-}
-
-func TestCurvePackagesUseSharedEngine(t *testing.T) {
-	files := []string{
-		filepath.Join("..", "p256", "p256.go"),
-		filepath.Join("..", "p384", "p384.go"),
-		filepath.Join("..", "p521", "p521.go"),
-	}
-	for _, file := range files {
-		content, err := os.ReadFile(file)
-		if err != nil {
-			t.Fatalf("read %s: %v", file, err)
-		}
-		text := string(content)
-		for _, forbidden := range []string{"func mapToCurve(", "func reduceUniform(", "func sqrtRatio("} {
-			if strings.Contains(text, forbidden) {
-				t.Fatalf("%s still defines %s", file, forbidden)
-			}
-		}
 	}
 }

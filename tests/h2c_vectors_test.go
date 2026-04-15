@@ -27,7 +27,6 @@ import (
 
 const hashToCurveVectorsFileLocation = "vectors/h2c"
 
-// const hashToCurveVectorsFileLocation = "h2c"
 type h2cVectors struct {
 	Ciphersuite string `json:"ciphersuite"`
 	Mode        string
@@ -206,23 +205,10 @@ func (v *h2cVector) verifyHashingToElement(t *testing.T, expectedElement string)
 	}
 }
 
-var groups = []struct {
-	h2c   string
-	e2c   string
-	group ecc.Group
-}{
-	{ecc.Ristretto255Sha512, "ristretto255_XMD:SHA-512_R255MAP_RO_", "ristretto255_XMD:SHA-512_R255MAP_RO_"},
-	{ecc.P256Sha256, "P256_XMD:SHA-256_SSWU_RO_", "P256_XMD:SHA-256_SSWU_NU_"},
-	{ecc.P384Sha384, "P384_XMD:SHA-384_SSWU_RO_", "P384_XMD:SHA-384_SSWU_NU_"},
-	{ecc.P521Sha512, "P521_XMD:SHA-512_SSWU_RO_", "P521_XMD:SHA-512_SSWU_NU_"},
-	{ecc.Edwards25519Sha512, "edwards25519_XMD:SHA-512_ELL2_RO_", "edwards25519_XMD:SHA-512_ELL2_NU_"},
-	{ecc.Secp256k1Sha256, "secp256k1_XMD:SHA-256_SSWU_RO_", "secp256k1_XMD:SHA-256_SSWU_NU_"},
-}
-
 // for a given ciphersuite string, return the corresponding group identifier.
 func getGroup(ciphersuite string) (ecc.Group, bool) {
-	for _, group := range groups {
-		if group.h2c == ciphersuite || group.e2c == ciphersuite {
+	for _, group := range testTable {
+		if group.hashToCurve.h2c == ciphersuite || group.hashToCurve.e2c == ciphersuite {
 			return group.group, true
 		}
 	}
@@ -230,6 +216,7 @@ func getGroup(ciphersuite string) (ecc.Group, bool) {
 	return 0, false
 }
 
+// TestHashToCurveVectors tests the bundled hash-to-curve vector files against the public group APIs.
 func TestHashToCurveVectors(t *testing.T) {
 	if err := filepath.Walk(hashToCurveVectorsFileLocation,
 		func(path string, info os.FileInfo, err error) error {

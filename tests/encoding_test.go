@@ -166,6 +166,7 @@ func testDecodeBad(t *testing.T, group ecc.Group, s serde, bad []byte, expectedE
 	expectErrors(t, func() error { return s.UnmarshalJSON(badJson) }, expectedErrors...)
 }
 
+// TestScalar_Encoding tests scalar round-tripping across binary, hex, and JSON encodings.
 func TestScalar_Encoding(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		g := group.group
@@ -178,6 +179,7 @@ func TestScalar_Encoding(t *testing.T) {
 	})
 }
 
+// TestElement_Encoding tests element round-tripping across binary, hex, and JSON encodings.
 func TestElement_Encoding(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		g := group.group
@@ -190,6 +192,7 @@ func TestElement_Encoding(t *testing.T) {
 	})
 }
 
+// TestScalar_Decoding_Fails tests that invalid scalar encodings are rejected across decode APIs.
 func TestScalar_Decoding_Fails(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		g := group.group
@@ -204,6 +207,7 @@ func TestScalar_Decoding_Fails(t *testing.T) {
 	})
 }
 
+// TestElement_Decoding_Fails tests that invalid element encodings are rejected across decode APIs.
 func TestElement_Decoding_Fails(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		g := group.group
@@ -258,6 +262,7 @@ func testDecodingHexFails(t *testing.T, thing1, thing2 serde, expectedError erro
 	}
 }
 
+// TestEncoding_Hex_Scalar_Fails tests that malformed scalar hex strings are rejected.
 func TestEncoding_Hex_Scalar_Fails(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		g := group.group
@@ -266,6 +271,7 @@ func TestEncoding_Hex_Scalar_Fails(t *testing.T) {
 	})
 }
 
+// TestEncoding_Hex_Element_Fails tests that malformed element hex strings are rejected.
 func TestEncoding_Hex_Element_Fails(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		g := group.group

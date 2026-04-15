@@ -21,6 +21,7 @@ import (
 	"github.com/bytemare/ecc/internal"
 )
 
+// FuzzGroup fuzzes group-level hashing and DST generation across arbitrary group identifiers.
 func FuzzGroup(f *testing.F) {
 	f.Fuzz(func(t *testing.T, group byte, h2Input, h2DST []byte, dstApp string, dstVersion uint8) {
 		if panicked, err := hasPanic(func() {
@@ -65,6 +66,7 @@ func FuzzGroup(f *testing.F) {
 	})
 }
 
+// FuzzScalar fuzzes scalar decoding and deserialization entrypoints across arbitrary group identifiers.
 func FuzzScalar(f *testing.F) {
 	f.Fuzz(func(t *testing.T, group byte, input []byte, i uint64) {
 		if panicked, err := hasPanic(func() {
@@ -82,6 +84,7 @@ func FuzzScalar(f *testing.F) {
 	})
 }
 
+// FuzzElement fuzzes the decode and unmarshal entrypoints currently exercised by this test across arbitrary group identifiers.
 func FuzzElement(f *testing.F) {
 	f.Fuzz(func(t *testing.T, group byte, input []byte) {
 		if panicked, err := hasPanic(func() {
@@ -130,6 +133,7 @@ func fuzzTestSkipXMDInput(t *testing.T, h uint, dst []byte, length uint) {
 	}
 }
 
+// FuzzExpandXMD fuzzes ExpandXMD across hash identifiers, inputs, DSTs, and output lengths.
 func FuzzExpandXMD(f *testing.F) {
 	f.Fuzz(func(t *testing.T, h uint, input, dst []byte, length uint) {
 		fuzzTestSkipXMDInput(t, h, dst, length)
@@ -153,6 +157,7 @@ func fuzzTestSkipXOFInput(t *testing.T, h uint, dst []byte, length uint) {
 	}
 }
 
+// FuzzExpandXOF fuzzes ExpandXOF across XOF identifiers, inputs, DSTs, and output lengths.
 func FuzzExpandXOF(f *testing.F) {
 	f.Fuzz(func(t *testing.T, h uint, input, dst []byte, length uint) {
 		fuzzTestSkipXOFInput(t, h, dst, length)

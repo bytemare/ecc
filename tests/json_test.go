@@ -62,6 +62,7 @@ func testJSONBaddie(t *testing.T, baddie jsonTesterBaddie) {
 	expectErrors(t, func() error { return err }, baddie.expectedError)
 }
 
+// TestDecode_Group_Fail tests that JSON decoding rejects mismatched group identifiers.
 func TestDecode_Group_Fail(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		// Mismatched group should fail.

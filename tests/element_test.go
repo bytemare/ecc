@@ -56,6 +56,7 @@ func testElementCopySet(t *testing.T, element, other *ecc.Element) {
 	}
 }
 
+// TestElement_Group tests that each element reports its owning group.
 func TestElement_Group(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		e := group.group.NewElement()
@@ -65,6 +66,7 @@ func TestElement_Group(t *testing.T) {
 	})
 }
 
+// TestElement_Copy tests that Copy duplicates an element without aliasing it.
 func TestElement_Copy(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		base := group.group.Base()
@@ -73,6 +75,7 @@ func TestElement_Copy(t *testing.T) {
 	})
 }
 
+// TestElement_Set tests that Set copies an element value without aliasing it.
 func TestElement_Set(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		base := group.group.Base()
@@ -82,6 +85,7 @@ func TestElement_Set(t *testing.T) {
 	})
 }
 
+// TestElement_WrongInput tests that element operations panic on inputs from the wrong group.
 func TestElement_WrongInput(t *testing.T) {
 	exec := func(f func(*ecc.Element) *ecc.Element, arg *ecc.Element) func() {
 		return func() {
@@ -133,6 +137,7 @@ func TestElement_WrongInput(t *testing.T) {
 		mult(ecc.Ristretto255Sha512.NewElement().Multiply, ecc.P384Sha384.NewScalar()))
 }
 
+// TestElement_EncodedLength tests that element encodings have the expected lengths and identity bytes.
 func TestElement_EncodedLength(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		id := group.group.NewElement().Identity().Encode()
@@ -164,6 +169,7 @@ func TestElement_EncodedLength(t *testing.T) {
 	})
 }
 
+// TestElement_Decode_Identity tests the decode behavior for encoded identity elements across groups.
 func TestElement_Decode_Identity(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		var expected error
@@ -194,6 +200,7 @@ func TestElement_Decode_Identity(t *testing.T) {
 	})
 }
 
+// TestElement_XCoordinate tests that the base-point X coordinate matches the expected vectors.
 func TestElement_XCoordinate(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		baseX := hex.EncodeToString(group.group.Base().XCoordinate())
@@ -203,6 +210,7 @@ func TestElement_XCoordinate(t *testing.T) {
 	})
 }
 
+// TestElement_XCoordinate_Identity tests that the identity element reports an all-zero X coordinate.
 func TestElement_XCoordinate_Identity(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		id := group.group.NewElement().Identity()
@@ -217,6 +225,7 @@ func TestElement_XCoordinate_Identity(t *testing.T) {
 	})
 }
 
+// TestElement_Vectors_Add tests repeated addition against the base-point multiplication vectors.
 func TestElement_Vectors_Add(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		base := group.group.Base()
@@ -242,6 +251,7 @@ func TestElement_Vectors_Add(t *testing.T) {
 	})
 }
 
+// TestElement_Vectors_Double tests doubling against the base-point multiplication vectors.
 func TestElement_Vectors_Double(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		tables := [][]int{
@@ -265,6 +275,7 @@ func TestElement_Vectors_Double(t *testing.T) {
 	})
 }
 
+// TestElement_Vectors_Mult tests scalar multiplication against the base-point multiplication vectors.
 func TestElement_Vectors_Mult(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		s := group.group.NewScalar()
@@ -282,6 +293,7 @@ func TestElement_Vectors_Mult(t *testing.T) {
 	})
 }
 
+// TestElement_Internal_NilOperations tests the internal nil-input contracts for element operations.
 func TestElement_Internal_NilOperations(t *testing.T) {
 	var (
 		nilScalar  internal.Scalar
@@ -337,6 +349,7 @@ func TestElement_Internal_NilOperations(t *testing.T) {
 	}
 }
 
+// TestElement_Arithmetic tests the core element arithmetic identities across all groups.
 func TestElement_Arithmetic(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		elementTestEqual(t, group.group)

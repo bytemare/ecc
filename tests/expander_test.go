@@ -29,6 +29,7 @@ import (
 
 const expandMessageVectorFiles = "vectors/expand"
 
+// TestExpander_ZeroDST tests that XMD and XOF expansion reject zero-length DST values.
 func TestExpander_ZeroDST(t *testing.T) {
 	msg := []byte("test")
 	zeroDST := []byte("")
@@ -53,6 +54,7 @@ func TestExpander_ZeroDST(t *testing.T) {
 	}, hash2curve.ErrZeroLengthDST)
 }
 
+// TestExpander_LongDST tests that long DST values are accepted and hashed down when required.
 func TestExpander_LongDST(t *testing.T) {
 	msg := []byte("test")
 	longDST := []byte(
@@ -72,6 +74,7 @@ func TestExpander_LongDST(t *testing.T) {
 	}
 }
 
+// TestExpander_XMDHighLength tests that ExpandXMD rejects oversized requested outputs.
 func TestExpander_XMDHighLength(t *testing.T) {
 	defer func() {
 		recover()
@@ -85,6 +88,7 @@ func TestExpander_XMDHighLength(t *testing.T) {
 	}, hash2curve.ErrLengthTooHigh)
 }
 
+// TestExpander_XOFHighLength tests that ExpandXOF rejects oversized requested outputs.
 func TestExpander_XOFHighLength(t *testing.T) {
 	defer func() {
 		recover()
@@ -292,6 +296,7 @@ func (s *expanderSet) run(t *testing.T) {
 	}
 }
 
+// TestExpander_Vectors tests the bundled expand-message vectors for XMD and XOF suites.
 func TestExpander_Vectors(t *testing.T) {
 	if err := filepath.Walk(expandMessageVectorFiles,
 		func(path string, info os.FileInfo, err error) error {
@@ -330,5 +335,79 @@ func TestExpander_Vectors(t *testing.T) {
 			return nil
 		}); err != nil {
 		t.Fatalf("error opening expanderSet expanderVectorStrings: %v", err)
+	}
+}
+
+// TestExpandXMDTo_MatchesExpandXMD tests that ExpandXMDTo produces the same bytes as ExpandXMD.
+func TestExpandXMDTo_MatchesExpandXMD(t *testing.T) {
+	input := []byte("test input")
+	dst := []byte("test dst for xmd")
+
+	testAllGroups(t, func(group *testGroup) {
+		want, err := hash2curve.ExpandXMD(group.hash, input, dst, group.hashToCurve.securityLength)
+		if err != nil {
+			t.Fatalf("ExpandXMD failed: %v", err)
+		}
+
+		got := make([]byte, group.hashToCurve.securityLength)
+		if err := hash2curve.ExpandXMDTo(group.hash, got, input, dst); err != nil {
+			t.Fatalf("ExpandXMDTo failed: %v", err)
+		}
+
+		if !bytes.Equal(got, want) {
+			t.Fatal("ExpandXMDTo output differs from ExpandXMD")
+		}
+	})
+}
+
+// TestExpandXMDTo_LongDSTMatchesExpandXMD tests that ExpandXMDTo matches ExpandXMD for long DST inputs.
+func TestExpandXMDTo_LongDSTMatchesExpandXMD(t *testing.T) {
+	input := []byte("test input")
+	dst := []byte(
+		"a255_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" +
+			"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+	)
+
+	testAllGroups(t, func(group *testGroup) {
+		h := group.hash
+
+		want, err := hash2curve.ExpandXMD(h, input, dst, group.hashToCurve.securityLength)
+		if err != nil {
+			t.Fatalf("ExpandXMD failed: %v", err)
+		}
+
+		got := make([]byte, group.hashToCurve.securityLength)
+		if err := hash2curve.ExpandXMDTo(h, got, input, dst); err != nil {
+			t.Fatalf("ExpandXMDTo failed: %v", err)
+		}
+
+		if !bytes.Equal(got, want) {
+			t.Fatal("ExpandXMDTo output differs from ExpandXMD for long DST")
+		}
+	})
+}
+
+// TestExpandXMDTo_UsesSliceLength tests that ExpandXMDTo uses len(out) and does not write beyond it.
+func TestExpandXMDTo_UsesSliceLength(t *testing.T) {
+	input := []byte("test input")
+	dst := []byte("test dst for xmd")
+	backing := make([]byte, 64)
+	out := backing[:32]
+
+	if err := hash2curve.ExpandXMDTo(crypto.SHA256, out, input, dst); err != nil {
+		t.Fatalf("ExpandXMDTo failed: %v", err)
+	}
+
+	want, err := hash2curve.ExpandXMD(crypto.SHA256, input, dst, uint(len(out)))
+	if err != nil {
+		t.Fatalf("ExpandXMD failed: %v", err)
+	}
+
+	if !bytes.Equal(out, want) {
+		t.Fatal("ExpandXMDTo does not use len(out) as the requested output size")
+	}
+
+	if !bytes.Equal(backing[len(out):], make([]byte, len(backing)-len(out))) {
+		t.Fatal("ExpandXMDTo wrote beyond len(out)")
 	}
 }

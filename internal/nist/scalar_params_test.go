@@ -60,6 +60,7 @@ func deriveScalarParams(
 	return p
 }
 
+// TestStaticP256ScalarParams tests that the static P-256 scalar parameters match derived reference values.
 func TestStaticP256ScalarParams(t *testing.T) {
 	want := deriveScalarParams(
 		IdentifierP256,
@@ -77,6 +78,7 @@ func TestStaticP256ScalarParams(t *testing.T) {
 	}
 }
 
+// TestStaticP384ScalarParams tests that the static P-384 scalar parameters match derived reference values.
 func TestStaticP384ScalarParams(t *testing.T) {
 	want := deriveScalarParams(
 		IdentifierP384,
@@ -101,6 +103,7 @@ func TestStaticP384ScalarParams(t *testing.T) {
 	}
 }
 
+// TestStaticP521ScalarParams tests that the static P-521 scalar parameters match derived reference values.
 func TestStaticP521ScalarParams(t *testing.T) {
 	want := deriveScalarParams(
 		IdentifierP521,

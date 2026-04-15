@@ -22,6 +22,7 @@ func benchmarkDecodeHex(b *testing.B, h string) []byte {
 	return out
 }
 
+// BenchmarkP256SetBytes benchmarks canonical P-256 field decoding through SetBytes.
 func BenchmarkP256SetBytes(b *testing.B) {
 	input := benchmarkDecodeHex(b, "5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b")
 	element := new(P256Element)
@@ -33,6 +34,7 @@ func BenchmarkP256SetBytes(b *testing.B) {
 	}
 }
 
+// BenchmarkP384SetBytes benchmarks canonical P-384 field decoding through SetBytes.
 func BenchmarkP384SetBytes(b *testing.B) {
 	input := benchmarkDecodeHex(
 		b,
@@ -47,6 +49,7 @@ func BenchmarkP384SetBytes(b *testing.B) {
 	}
 }
 
+// BenchmarkP521SetBytes benchmarks canonical P-521 field decoding through SetBytes.
 func BenchmarkP521SetBytes(b *testing.B) {
 	input := benchmarkDecodeHex(
 		b,

@@ -99,6 +99,7 @@ var ristrettoTests = []ristrettoTest{
 	},
 }
 
+// TestRistrettoScalar tests ristretto scalar decoding and inversion against the local test table.
 func TestRistrettoScalar(t *testing.T) {
 	for _, tt := range ristrettoTests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -139,6 +140,7 @@ func TestRistrettoScalar(t *testing.T) {
 	}
 }
 
+// TestRistrettoElement tests ristretto element decoding against the local test table.
 func TestRistrettoElement(t *testing.T) {
 	// Test if the element in the test is the base point
 	bp := ristretto.Group{}.NewElement().(*ristretto.Element).Base()

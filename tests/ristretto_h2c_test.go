@@ -63,6 +63,7 @@ var ristrettoH2gTests = []ristrettoH2gTest{
 	},
 }
 
+// TestRistretto_HashToGroup tests the Ristretto hash-to-group vectors.
 func TestRistretto_HashToGroup(t *testing.T) {
 	for i, test := range ristrettoH2gTests {
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
@@ -87,6 +88,7 @@ func TestRistretto_HashToGroup(t *testing.T) {
 	}
 }
 
+// TestRistretto_EncodeToGroup tests the Ristretto encode-to-group vectors.
 func TestRistretto_EncodeToGroup(t *testing.T) {
 	for i, test := range ristrettoH2gTests {
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
@@ -110,6 +112,7 @@ func TestRistretto_EncodeToGroup(t *testing.T) {
 	}
 }
 
+// TestHashEncodeToRistretto_MatchesHash tests that Ristretto EncodeToGroup matches HashToGroup.
 func TestHashEncodeToRistretto_MatchesHash(t *testing.T) {
 	g := ecc.Ristretto255Sha512
 	input := []byte("ristretto data")

@@ -31,6 +31,7 @@ import (
 
 const scalarCompareIterations = 256
 
+// TestScalar_Group tests that each scalar reports its owning group.
 func TestScalar_Group(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		s := group.group.NewScalar()
@@ -40,6 +41,7 @@ func TestScalar_Group(t *testing.T) {
 	})
 }
 
+// TestScalar_WrongInput tests that scalar operations panic on wrong-group and wrong-field inputs.
 func TestScalar_WrongInput(t *testing.T) {
 	exec := func(f func(*ecc.Scalar) *ecc.Scalar, arg *ecc.Scalar) func() {
 		return func() {
@@ -111,6 +113,7 @@ func testScalarCopySet(t *testing.T, scalar, other *ecc.Scalar) {
 	}
 }
 
+// TestScalar_Copy tests that Copy duplicates a scalar without aliasing it.
 func TestScalar_Copy(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		random := group.group.NewScalar().Random()
@@ -119,6 +122,7 @@ func TestScalar_Copy(t *testing.T) {
 	})
 }
 
+// TestScalar_Set tests that Set copies a scalar value without aliasing it.
 func TestScalar_Set(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		random := group.group.NewScalar().Random()
@@ -159,6 +163,7 @@ func testScalarUInt64(t *testing.T, s *ecc.Scalar, expectedValue uint64, expecte
 	}
 }
 
+// TestScalar_UInt64 tests conversion of scalars to uint64 across valid and overflowing values.
 func TestScalar_UInt64(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		// 0
@@ -180,6 +185,7 @@ func TestScalar_UInt64(t *testing.T) {
 	})
 }
 
+// TestScalar_SetUInt64 tests uint64-to-scalar conversion across all groups.
 func TestScalar_SetUInt64(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		s := group.group.NewScalar().SetUInt64(0)
@@ -209,6 +215,7 @@ func TestScalar_SetUInt64(t *testing.T) {
 	})
 }
 
+// TestScalar_EncodedLength tests that encoded scalars have the expected byte length.
 func TestScalar_EncodedLength(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		encodedScalar := group.group.NewScalar().Random().Encode()
@@ -297,6 +304,7 @@ func expectedReducedScalar(t *testing.T, g ecc.Group, input []byte) *ecc.Scalar 
 	return s
 }
 
+// TestScalar_DecodeWithReduction_InvalidInputLength tests that DecodeWithReduction rejects invalid input lengths.
 func TestScalar_DecodeWithReduction_InvalidInputLength(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		g := group.group
@@ -345,6 +353,7 @@ func TestScalar_DecodeWithReduction_InvalidInputLength(t *testing.T) {
 	})
 }
 
+// TestScalar_DecodeWithReduction_Edges tests DecodeWithReduction on edge-case inputs around each group order.
 func TestScalar_DecodeWithReduction_Edges(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		g := group.group
@@ -440,6 +449,7 @@ func TestScalar_DecodeWithReduction_Edges(t *testing.T) {
 	})
 }
 
+// TestScalar_DecodeWithReduction_Properties tests the reduction and canonical round-trip properties of DecodeWithReduction.
 func TestScalar_DecodeWithReduction_Properties(t *testing.T) {
 	const iterations = 16
 
@@ -532,6 +542,7 @@ func TestScalar_DecodeWithReduction_Properties(t *testing.T) {
 	})
 }
 
+// TestScalar_Internal_NilOperations tests the internal nil-input contracts for scalar operations.
 func TestScalar_Internal_NilOperations(t *testing.T) {
 	var nilScalar internal.Scalar
 
@@ -582,6 +593,7 @@ func TestScalar_Internal_NilOperations(t *testing.T) {
 	}
 }
 
+// TestScalar_Arithmetic tests the core scalar arithmetic identities across all groups.
 func TestScalar_Arithmetic(t *testing.T) {
 	testAllGroups(t, func(group *testGroup) {
 		scalarTestZero(t, group.group)

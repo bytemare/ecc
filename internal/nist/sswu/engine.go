@@ -57,13 +57,16 @@ type Engine[E FieldElement[E], P any] struct {
 // HashToCurve returns the RFC 9380 random-oracle encoding for the configured
 // curve.
 func (e *Engine[E, P]) HashToCurve(input, dst []byte) (P, error) {
-	uniform, err := hash2curve.ExpandXMD(e.Hash, input, dst, uint(2*e.UniformLength))
-	if err != nil {
+	length := 2 * e.UniformLength
+	var uniform [196]byte // 196 is 2*98, the highest value we would use, for P521.
+
+	// Pre-allocate a larger buffer but slice it to length. This spares a dedicated allocation.
+	if err := hash2curve.ExpandXMDTo(e.Hash, uniform[:length], input, dst); err != nil {
 		return *new(P), err
 	}
 
 	q0 := e.mapToCurve(e.reduceUniform(uniform[:e.UniformLength]))
-	q1 := e.mapToCurve(e.reduceUniform(uniform[e.UniformLength:]))
+	q1 := e.mapToCurve(e.reduceUniform(uniform[e.UniformLength:length]))
 
 	return e.AddPoints(q0, q1), nil
 }
@@ -71,12 +74,14 @@ func (e *Engine[E, P]) HashToCurve(input, dst []byte) (P, error) {
 // EncodeToCurve returns the RFC 9380 non-uniform encoding for the configured
 // curve.
 func (e *Engine[E, P]) EncodeToCurve(input, dst []byte) (P, error) {
-	uniform, err := hash2curve.ExpandXMD(e.Hash, input, dst, uint(e.UniformLength))
-	if err != nil {
+	var uniform [98]byte // 98 is the highest value we would use, for P521.
+
+	// Pre-allocate a larger buffer but slice it to length. This spares a dedicated allocation.
+	if err := hash2curve.ExpandXMDTo(e.Hash, uniform[:e.UniformLength], input, dst); err != nil {
 		return *new(P), err
 	}
 
-	return e.mapToCurve(e.reduceUniform(uniform)), nil
+	return e.mapToCurve(e.reduceUniform(uniform[:e.UniformLength])), nil
 }
 
 // reduceUniform reduces expanded XMD bytes into a field element by Horner

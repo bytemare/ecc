@@ -152,6 +152,7 @@ func testDecodeEmpty(t *testing.T, s serde) {
 	}
 }
 
+// TestFieldString2Int_Invalid tests that String2Int panics on non-numeric input.
 func TestFieldString2Int_Invalid(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {

@@ -73,8 +73,9 @@ func ExpandXMD(id crypto.Hash, input, dst []byte, length uint) ([]byte, error) {
 	return out, nil
 }
 
-// ExpandXMDTo does that same than [ExpandXMD] but writes the output to the provided slice.
-// The output slice must be of the desired length, and an error is returned if the length is too high for the hash function or the DST.
+// ExpandXMDTo behaves like [ExpandXMD] but writes the output into out.
+// The requested output length is len(out); cap(out) is ignored.
+// An error is returned if len(out) is too high for the hash function or the DST.
 func ExpandXMDTo(id crypto.Hash, out, input, dst []byte) error {
 	dst, err := VetDSTXMD(id, dst)
 	if err != nil {
@@ -118,8 +119,8 @@ func ExpandXMDTo(id crypto.Hash, out, input, dst []byte) error {
 		b1 = make([]byte, h.Size())
 	}
 
-	b0 = hashTo(h, b0, zPad, input, lib[:], zeroByte[:], dstPrime)
-	b1 = hashTo(h, b1, b0, []byte{1}, dstPrime)
+	b0 = hashTo5(h, b0, zPad, input, lib[:], zeroByte[:], dstPrime)
+	b1 = hashTo3(h, b1, b0, []byte{1}, dstPrime)
 	offset := copy(out, b1[:id.Size()])
 
 	// ell < 2 means the hash function's output length is sufficient.
@@ -150,7 +151,7 @@ func xmd(h hash.Hash, out, b0, b1, dstPrime []byte, ell, offset int) {
 			bi[j] ^= b0[j]
 		}
 
-		bi = hashTo(h, bi[:], bi[:h.Size()], []byte{byte(i)}, dstPrime)
+		bi = hashTo3(h, bi[:], bi[:h.Size()], []byte{byte(i)}, dstPrime)
 		offset += copy(out[offset:], bi[:h.Size()])
 	}
 }
@@ -187,15 +188,33 @@ func VetDSTXMD(id crypto.Hash, dst []byte) ([]byte, error) {
 
 	// If the tag length exceeds 255 bytes, compute a shorter tag by hashing it
 	out := make([]byte, id.Size())
-	return hashTo(id.New(), out, []byte(dstLongPrefix), dst), nil
+	return hashTo2(id.New(), out, []byte(dstLongPrefix), dst), nil
 }
 
-func hashTo(h hash.Hash, out []byte, input ...[]byte) []byte {
+func hashTo2(h hash.Hash, out, a, b []byte) []byte {
 	h.Reset()
+	_, _ = h.Write(a)
+	_, _ = h.Write(b)
 
-	for _, i := range input {
-		_, _ = h.Write(i)
-	}
+	return h.Sum(out[:0])
+}
+
+func hashTo3(h hash.Hash, out, a, b, c []byte) []byte {
+	h.Reset()
+	_, _ = h.Write(a)
+	_, _ = h.Write(b)
+	_, _ = h.Write(c)
+
+	return h.Sum(out[:0])
+}
+
+func hashTo5(h hash.Hash, out, a, b, c, d, e []byte) []byte {
+	h.Reset()
+	_, _ = h.Write(a)
+	_, _ = h.Write(b)
+	_, _ = h.Write(c)
+	_, _ = h.Write(d)
+	_, _ = h.Write(e)
 
 	return h.Sum(out[:0])
 }

@@ -38,6 +38,7 @@ func mustDecodeHex(t *testing.T, h string) []byte {
 	return b
 }
 
+// TestP256PrecomputedConstants tests that the checked-in P-256 field constants match runtime-derived values.
 func TestP256PrecomputedConstants(t *testing.T) {
 	one := new(P256Element).One().Bytes()
 	if got := P256One().Bytes(); !bytes.Equal(got, one) {
@@ -77,6 +78,7 @@ func TestP256PrecomputedConstants(t *testing.T) {
 	}
 }
 
+// TestP384PrecomputedConstants tests that the checked-in P-384 field constants match runtime-derived values.
 func TestP384PrecomputedConstants(t *testing.T) {
 	one := new(P384Element).One().Bytes()
 	if got := P384One().Bytes(); !bytes.Equal(got, one) {
@@ -119,6 +121,7 @@ func TestP384PrecomputedConstants(t *testing.T) {
 	}
 }
 
+// TestP521PrecomputedConstants tests that the checked-in P-521 field constants match runtime-derived values.
 func TestP521PrecomputedConstants(t *testing.T) {
 	one := new(P521Element).One().Bytes()
 	if got := P521One().Bytes(); !bytes.Equal(got, one) {
